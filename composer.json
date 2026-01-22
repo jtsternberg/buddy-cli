@@ -6,7 +6,8 @@
     "require": {
         "php": "^8.0",
         "buddy-works/buddy-works-php-api": "^1.4",
-        "symfony/console": "^6.0|^7.0"
+        "symfony/console": "^6.0|^7.0",
+        "symfony/yaml": "^7.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0"

@@ -13,10 +13,13 @@ use BuddyCli\Commands\Executions\FailedCommand;
 use BuddyCli\Commands\Executions\ListCommand as ExecutionsListCommand;
 use BuddyCli\Commands\Executions\ShowCommand as ExecutionsShowCommand;
 use BuddyCli\Commands\Pipelines\CancelCommand;
+use BuddyCli\Commands\Pipelines\CreateCommand;
+use BuddyCli\Commands\Pipelines\GetCommand;
 use BuddyCli\Commands\Pipelines\ListCommand as PipelinesListCommand;
 use BuddyCli\Commands\Pipelines\RetryCommand;
 use BuddyCli\Commands\Pipelines\RunCommand;
 use BuddyCli\Commands\Pipelines\ShowCommand as PipelinesShowCommand;
+use BuddyCli\Commands\Pipelines\UpdateCommand;
 use BuddyCli\Commands\Projects\ListCommand as ProjectsListCommand;
 use BuddyCli\Commands\Projects\ShowCommand as ProjectsShowCommand;
 use BuddyCli\Services\BuddyService;
@@ -80,6 +83,9 @@ class Application extends ConsoleApplication
         $this->add(new RunCommand($this));
         $this->add(new RetryCommand($this));
         $this->add(new CancelCommand($this));
+        $this->add(new GetCommand($this));
+        $this->add(new CreateCommand($this));
+        $this->add(new UpdateCommand($this));
 
         // Execution commands
         $this->add(new ExecutionsListCommand($this));

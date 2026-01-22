@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BuddyCli\Commands\Pipelines;
 
+use Buddy\Exceptions\BuddyResponseException;
 use BuddyCli\Commands\BaseCommand;
 use BuddyCli\Output\TableFormatter;
 use Symfony\Component\Console\Input\InputArgument;
@@ -50,7 +51,36 @@ class RunCommand extends BaseCommand
             $data['comment'] = $comment;
         }
 
-        $execution = $this->getBuddyService()->runExecution($workspace, $project, $pipelineId, $data);
+        // Check if pipeline uses wildcards and requires branch/tag/revision
+        $pipeline = $this->getBuddyService()->getPipeline($workspace, $project, $pipelineId);
+        $hasRef = !empty($data['branch']) || !empty($data['tag']) || !empty($data['to_revision']);
+        if (empty($pipeline['ref_name']) && !$hasRef) {
+            $output->writeln('<error>This pipeline uses wildcards. Specify --branch, --tag, or --revision.</error>');
+            return self::FAILURE;
+        }
+
+        try {
+            $execution = $this->getBuddyService()->runExecution($workspace, $project, $pipelineId, $data);
+        } catch (BuddyResponseException $e) {
+            $message = $e->getMessage();
+            $code = $e->getStatusCode();
+            switch ($code) {
+                case 400:
+                    $message = "[$code] Invalid request: $message";
+                    break;
+                case 401:
+                    $message = "[$code] Unauthorized: $message";
+                    break;
+            }
+
+            $output->writeln("<error>{$message}</error>");
+            $output->writeln('');
+            $this->getApplication()->find('help')->run(
+                new \Symfony\Component\Console\Input\ArrayInput(['command_name' => $this->getName()]),
+                $output
+            );
+            return self::FAILURE;
+        }
 
         if ($input->getOption('wait')) {
             $output->writeln('<comment>Waiting for execution to complete...</comment>');

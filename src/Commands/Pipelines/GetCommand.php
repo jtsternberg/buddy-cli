@@ -5,22 +5,21 @@ declare(strict_types=1);
 namespace BuddyCli\Commands\Pipelines;
 
 use BuddyCli\Commands\BaseCommand;
-use BuddyCli\Output\TableFormatter;
 use BuddyCli\Output\YamlFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ShowCommand extends BaseCommand
+class GetCommand extends BaseCommand
 {
     protected function configure(): void
     {
         $this
-            ->setName('pipelines:show')
-            ->setDescription('Show pipeline details')
+            ->setName('pipelines:get')
+            ->setDescription('Get pipeline configuration as YAML')
             ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID')
-            ->addOption('yaml', 'y', InputOption::VALUE_NONE, 'Output as YAML configuration');
+            ->addOption('output', 'o', InputOption::VALUE_REQUIRED, 'Output file path (default: pipeline-{id}.yaml)');
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
@@ -36,47 +35,13 @@ class ShowCommand extends BaseCommand
         $pipeline = $this->getBuddyService()->getPipeline($workspace, $project, $pipelineId);
         $actions = $this->getBuddyService()->getPipelineActions($workspace, $project, $pipelineId);
 
-        if ($input->getOption('yaml')) {
-            $config = $this->buildPipelineConfig($pipeline, $actions['actions'] ?? []);
-            YamlFormatter::output($output, $config);
-            return self::SUCCESS;
-        }
+        $config = $this->buildPipelineConfig($pipeline, $actions['actions'] ?? []);
+        $yaml = YamlFormatter::dump($config);
 
-        if ($this->isJsonOutput($input)) {
-            $this->outputJson($output, $pipeline);
-            return self::SUCCESS;
-        }
+        $outputPath = $input->getOption('output') ?? "pipeline-{$pipelineId}.yaml";
+        file_put_contents($outputPath, $yaml);
 
-        $data = [
-            'ID' => $pipeline['id'] ?? '-',
-            'Name' => $pipeline['name'] ?? '-',
-            'Status' => $this->formatStatus($pipeline['last_execution_status'] ?? 'UNKNOWN'),
-            'Trigger' => $pipeline['trigger_mode'] ?? '-',
-            'Branch/Ref' => $pipeline['ref_name'] ?? '-',
-            'Last Run' => $this->formatTime($pipeline['last_execution_date'] ?? null),
-            'Created' => $this->formatTime($pipeline['create_date'] ?? null),
-        ];
-
-        TableFormatter::keyValue($output, $data, "Pipeline: {$pipeline['name']}");
-
-        // Show actions if available
-        $actionList = $actions['actions'] ?? [];
-
-        if (!empty($actionList)) {
-            $output->writeln('');
-            $output->writeln('<info>Actions:</info>');
-
-            $rows = [];
-            foreach ($actionList as $action) {
-                $rows[] = [
-                    $action['id'] ?? '-',
-                    $action['name'] ?? '-',
-                    $action['type'] ?? '-',
-                ];
-            }
-
-            TableFormatter::render($output, ['ID', 'Name', 'Type'], $rows);
-        }
+        $output->writeln("<info>Saved pipeline config to {$outputPath}</info>");
 
         return self::SUCCESS;
     }
@@ -99,13 +64,13 @@ class ShowCommand extends BaseCommand
         ];
 
         if (!empty($pipeline['variables'])) {
-            $config['variables'] = array_map(fn($v) => [
+            $config['variables'] = array_map(fn($v) => array_filter([
                 'key' => $v['key'],
                 'value' => $v['value'] ?? '',
                 'type' => $v['type'] ?? 'VAR',
                 'settable' => $v['settable'] ?? false,
                 'description' => $v['description'] ?? null,
-            ], $pipeline['variables']);
+            ], fn($val) => $val !== null), $pipeline['variables']);
         }
 
         if (!empty($actions)) {
@@ -123,7 +88,6 @@ class ShowCommand extends BaseCommand
             'trigger_time' => $action['trigger_time'] ?? 'ON_EVERY_EXECUTION',
         ];
 
-        // Include type-specific configuration
         if (isset($action['docker_image_name'])) {
             $config['docker_image_name'] = $action['docker_image_name'];
             $config['docker_image_tag'] = $action['docker_image_tag'] ?? 'latest';

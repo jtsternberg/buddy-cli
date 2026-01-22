@@ -76,6 +76,27 @@ class BuddyService
         );
     }
 
+    public function createPipeline(string $workspace, string $projectName, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiPipelines()->addPipeline($data, $workspace, $projectName)->getBody()
+        );
+    }
+
+    public function updatePipeline(string $workspace, string $projectName, int $pipelineId, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiPipelines()->editPipeline($data, $workspace, $projectName, $pipelineId)->getBody()
+        );
+    }
+
+    public function createPipelineAction(string $workspace, string $projectName, int $pipelineId, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiPipelines()->addPipelineAction($data, $workspace, $projectName, $pipelineId)->getBody()
+        );
+    }
+
     // Execution methods
 
     public function getExecutions(string $workspace, string $projectName, int $pipelineId, array $filters = []): array

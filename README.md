@@ -2,6 +2,8 @@
 
 A PHP CLI tool for interacting with [Buddy.works](https://buddy.works) CI/CD pipelines.
 
+> **Note:** The official [buddy-works/buddy-cli](https://github.com/buddy-works/buddy-cli) has been abandoned. This project provides a maintained alternative.
+
 ## Installation
 
 ```bash
@@ -68,10 +70,15 @@ BUDDY_PROJECT=<project-name>
 ```bash
 buddy pipelines:list                      # List all pipelines
 buddy pipelines:show <id>                 # Show pipeline details
+buddy pipelines:show <id> --yaml          # Output as YAML configuration
 buddy pipelines:run <id>                  # Run a pipeline
+buddy pipelines:run <id> --branch=main    # Run with specific branch
 buddy pipelines:run <id> --wait           # Run and wait for completion
 buddy pipelines:retry <id>                # Retry last failed execution
 buddy pipelines:cancel <id>               # Cancel running execution
+buddy pipelines:get <id>                  # Get pipeline config as YAML file
+buddy pipelines:create <file>             # Create new pipeline from YAML file
+buddy pipelines:update <id> <file>        # Update existing pipeline from YAML
 ```
 
 ### Executions
