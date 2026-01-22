@@ -121,7 +121,6 @@ class LoginCommand extends Command
 
             $output->writeln('');
             $output->writeln('<info>✓ Logged in successfully!</info>');
-            $output->writeln('Token saved to ' . $config->getConfigFilePath());
 
             return self::SUCCESS;
         } catch (\Exception $e) {

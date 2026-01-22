@@ -53,7 +53,7 @@ class Application extends ConsoleApplication
                     "No API token configured. Run 'buddy login' to authenticate, or set BUDDY_TOKEN environment variable."
                 );
             }
-            $this->buddyService = new BuddyService($token);
+            $this->buddyService = new BuddyService($token, $this->configService);
         }
 
         return $this->buddyService;

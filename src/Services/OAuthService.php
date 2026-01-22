@@ -50,13 +50,30 @@ class OAuthService
 
     public function exchangeCodeForToken(string $code, string $redirectUri): array
     {
-        $params = [
+        return $this->requestToken([
             'grant_type' => 'authorization_code',
             'code' => $code,
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
             'redirect_uri' => $redirectUri,
-        ];
+        ], 'exchange code');
+    }
+
+    public function refreshToken(string $refreshToken): array
+    {
+        return $this->requestToken([
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $refreshToken,
+        ], 'refresh token');
+    }
+
+    public function generateState(): string
+    {
+        return bin2hex(random_bytes(16));
+    }
+
+    private function requestToken(array $params, string $action): array
+    {
+        $params['client_id'] = $this->clientId;
+        $params['client_secret'] = $this->clientSecret;
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -76,23 +93,18 @@ class OAuthService
         curl_close($ch);
 
         if ($error) {
-            throw new \RuntimeException("Failed to exchange code: {$error}");
+            throw new \RuntimeException("Failed to {$action}: {$error}");
         }
 
         if ($httpCode !== 200) {
-            throw new \RuntimeException("Token exchange failed with HTTP {$httpCode}: {$response}");
+            throw new \RuntimeException("Failed to {$action} (HTTP {$httpCode}): {$response}");
         }
 
         $data = json_decode($response, true);
         if (!isset($data['access_token'])) {
-            throw new \RuntimeException('No access token in response: ' . $response);
+            throw new \RuntimeException("Failed to {$action}: no access token in response");
         }
 
         return $data;
-    }
-
-    public function generateState(): string
-    {
-        return bin2hex(random_bytes(16));
     }
 }
