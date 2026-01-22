@@ -73,24 +73,43 @@ class ShowCommand extends BaseCommand
 
             // Show logs if requested
             if ($input->getOption('logs')) {
-                $this->showLogs($output, $actionExecutions);
+                $this->showLogs($output, $workspace, $project, $pipelineId, $executionId, $actionExecutions);
             }
         }
 
         return self::SUCCESS;
     }
 
-    private function showLogs(OutputInterface $output, array $actionExecutions): void
+    private function showLogs(OutputInterface $output, string $workspace, string $project, int $pipelineId, int $executionId, array $actionExecutions): void
     {
-        foreach ($actionExecutions as $action) {
-            $logs = $action['logs'] ?? null;
-            if ($logs === null) {
+        foreach ($actionExecutions as $actionExec) {
+            $actionId = $actionExec['action']['id'] ?? null;
+            if ($actionId === null) {
                 continue;
             }
 
-            $output->writeln('');
-            $output->writeln(sprintf('<comment>--- Logs: %s ---</comment>', $action['action']['name'] ?? 'Unknown'));
-            $output->writeln($logs);
+            try {
+                $actionDetails = $this->getBuddyService()->getActionExecution(
+                    $workspace,
+                    $project,
+                    $pipelineId,
+                    $executionId,
+                    (int) $actionId
+                );
+
+                $logs = $actionDetails['log'] ?? [];
+                if (empty($logs)) {
+                    continue;
+                }
+
+                $output->writeln('');
+                $output->writeln(sprintf('<comment>--- Logs: %s ---</comment>', $actionExec['action']['name'] ?? 'Unknown'));
+                foreach ($logs as $line) {
+                    $output->writeln($line);
+                }
+            } catch (\Exception $e) {
+                // Skip actions where we can't fetch logs
+            }
         }
     }
 }

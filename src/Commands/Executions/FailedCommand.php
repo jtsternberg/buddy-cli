@@ -52,23 +52,41 @@ class FailedCommand extends BaseCommand
             return self::SUCCESS;
         }
 
-        foreach ($failedActions as $action) {
+        foreach ($failedActions as $actionExec) {
             $output->writeln('');
-            $output->writeln(sprintf('<error>Failed Action: %s</error>', $action['action']['name'] ?? 'Unknown'));
+            $output->writeln(sprintf('<error>Failed Action: %s</error>', $actionExec['action']['name'] ?? 'Unknown'));
 
             $data = [
-                'Type' => $action['action']['type'] ?? '-',
-                'Started' => $this->formatTime($action['start_date'] ?? null),
-                'Finished' => $this->formatTime($action['finish_date'] ?? null),
+                'Type' => $actionExec['action']['type'] ?? '-',
+                'Started' => $this->formatTime($actionExec['start_date'] ?? null),
+                'Finished' => $this->formatTime($actionExec['finish_date'] ?? null),
             ];
 
             TableFormatter::keyValue($output, $data);
 
-            $logs = $action['logs'] ?? null;
-            if ($logs !== null) {
-                $output->writeln('');
-                $output->writeln('<comment>Logs:</comment>');
-                $output->writeln($logs);
+            // Fetch action details with logs
+            $actionId = $actionExec['action']['id'] ?? null;
+            if ($actionId !== null) {
+                try {
+                    $actionDetails = $this->getBuddyService()->getActionExecution(
+                        $workspace,
+                        $project,
+                        $pipelineId,
+                        $executionId,
+                        (int) $actionId
+                    );
+
+                    $logs = $actionDetails['log'] ?? [];
+                    if (!empty($logs)) {
+                        $output->writeln('');
+                        $output->writeln('<comment>Logs:</comment>');
+                        foreach ($logs as $line) {
+                            $output->writeln($line);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Skip if we can't fetch logs
+                }
             }
         }
 

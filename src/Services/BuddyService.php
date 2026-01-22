@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace BuddyCli\Services;
 
-use Buddy\Buddy;
 use Buddy\Exceptions\BuddyResponseException;
+use BuddyCli\Api\ExtendedBuddy;
 
 class BuddyService
 {
-    private Buddy $buddy;
+    private ExtendedBuddy $buddy;
     private ConfigService $config;
     private bool $hasAttemptedRefresh = false;
 
     public function __construct(string $accessToken, ConfigService $config)
     {
         $this->config = $config;
-        $this->buddy = new Buddy([
+        $this->buddy = new ExtendedBuddy([
             'accessToken' => $accessToken,
         ]);
     }
@@ -134,6 +134,13 @@ class BuddyService
         );
     }
 
+    public function getActionExecution(string $workspace, string $projectName, int $pipelineId, int $executionId, int $actionId): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiExecutions()->getActionExecution($workspace, $projectName, $pipelineId, $executionId, $actionId)->getBody()
+        );
+    }
+
     /**
      * Execute an API call with automatic token refresh on 401.
      */
@@ -184,7 +191,7 @@ class BuddyService
             }
 
             // Reinitialize Buddy client with new token
-            $this->buddy = new Buddy([
+            $this->buddy = new ExtendedBuddy([
                 'accessToken' => $tokenData['access_token'],
             ]);
 
