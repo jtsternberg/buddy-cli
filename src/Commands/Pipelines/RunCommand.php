@@ -19,7 +19,9 @@ class RunCommand extends BaseCommand
             ->setName('pipelines:run')
             ->setDescription('Run a pipeline')
             ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID')
-            ->addOption('revision', 'r', InputOption::VALUE_REQUIRED, 'Git revision (branch, tag, or commit)')
+            ->addOption('branch', 'b', InputOption::VALUE_REQUIRED, 'Branch name (required for wildcard pipelines)')
+            ->addOption('revision', 'r', InputOption::VALUE_REQUIRED, 'Git revision (commit SHA)')
+            ->addOption('tag', 't', InputOption::VALUE_REQUIRED, 'Tag name')
             ->addOption('comment', 'c', InputOption::VALUE_REQUIRED, 'Execution comment')
             ->addOption('wait', null, InputOption::VALUE_NONE, 'Wait for execution to complete');
 
@@ -35,8 +37,14 @@ class RunCommand extends BaseCommand
         $pipelineId = (int) $input->getArgument('pipeline-id');
 
         $data = [];
+        if ($branch = $input->getOption('branch')) {
+            $data['branch'] = ['name' => $branch];
+        }
         if ($revision = $input->getOption('revision')) {
             $data['to_revision'] = ['revision' => $revision];
+        }
+        if ($tag = $input->getOption('tag')) {
+            $data['tag'] = ['name' => $tag];
         }
         if ($comment = $input->getOption('comment')) {
             $data['comment'] = $comment;
