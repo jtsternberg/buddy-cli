@@ -15,7 +15,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 class LoginCommand extends Command
 {
     private const DEFAULT_PORT = 8085;
-    private const PORT_RANGE = 100;
 
     private Application $app;
 
@@ -32,12 +31,20 @@ class LoginCommand extends Command
             ->setDescription('Authenticate with Buddy via OAuth')
             ->addOption('client-id', null, InputOption::VALUE_REQUIRED, 'OAuth client ID')
             ->addOption('client-secret', null, InputOption::VALUE_REQUIRED, 'OAuth client secret')
-            ->addOption('no-browser', null, InputOption::VALUE_NONE, 'Print URL instead of opening browser');
+            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Port for callback server', (string) self::DEFAULT_PORT)
+            ->addOption('no-browser', null, InputOption::VALUE_NONE, 'Print URL instead of opening browser')
+            ->addOption('test', null, InputOption::VALUE_NONE, 'Test callback server without OAuth (for verifying setup)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $config = $this->app->getConfigService();
+        $port = (int) $input->getOption('port');
+
+        // Test mode - just start server and wait for any request
+        if ($input->getOption('test')) {
+            return $this->runTestServer($port, $output);
+        }
 
         // Get OAuth credentials
         $clientId = $input->getOption('client-id')
@@ -57,14 +64,13 @@ class LoginCommand extends Command
             $output->writeln('  buddy config:set client_id <id> && buddy config:set client_secret <secret>');
             $output->writeln('');
             $output->writeln('Create an OAuth app at: https://app.buddy.works/my-apps');
-            $output->writeln('Set callback URL to: http://127.0.0.1');
+            $output->writeln("Set callback URL to: http://127.0.0.1:{$port}/callback");
             return self::FAILURE;
         }
 
-        // Find available port
-        $port = $this->findAvailablePort();
-        if ($port === null) {
-            $output->writeln('<error>Could not find available port for callback server.</error>');
+        // Check if port is available
+        if (!$this->isPortAvailable($port)) {
+            $output->writeln("<error>Port {$port} is not available. Try --port=PORT with a different port.</error>");
             return self::FAILURE;
         }
 
@@ -124,16 +130,78 @@ class LoginCommand extends Command
         }
     }
 
-    private function findAvailablePort(): ?int
+    private function isPortAvailable(int $port): bool
     {
-        for ($port = self::DEFAULT_PORT; $port < self::DEFAULT_PORT + self::PORT_RANGE; $port++) {
-            $socket = @fsockopen('127.0.0.1', $port, $errno, $errstr, 1);
-            if ($socket === false) {
-                return $port; // Port is available
-            }
-            fclose($socket);
+        $socket = @fsockopen('127.0.0.1', $port, $errno, $errstr, 1);
+        if ($socket === false) {
+            return true; // Port is available
         }
-        return null;
+        fclose($socket);
+        return false;
+    }
+
+    private function runTestServer(int $port, OutputInterface $output): int
+    {
+        if (!$this->isPortAvailable($port)) {
+            $output->writeln("<error>Port {$port} is not available.</error>");
+            return self::FAILURE;
+        }
+
+        $socket = $this->createCallbackServer($port);
+        if ($socket === false) {
+            $output->writeln('<error>Could not start callback server.</error>');
+            return self::FAILURE;
+        }
+
+        $output->writeln('<info>Callback server running!</info>');
+        $output->writeln('');
+        $output->writeln("URL: <comment>http://127.0.0.1:{$port}/callback</comment>");
+        $output->writeln('');
+        $output->writeln('Test with:');
+        $output->writeln("  curl \"http://127.0.0.1:{$port}/callback?code=test&state=test\"");
+        $output->writeln('');
+        $output->writeln('Or open in browser:');
+        $output->writeln("  http://127.0.0.1:{$port}/callback?code=test&state=test");
+        $output->writeln('');
+        $output->writeln('Waiting for request (Ctrl+C to stop)...');
+
+        $client = @stream_socket_accept($socket, 300);
+        if ($client === false) {
+            $output->writeln('<comment>Timeout - no request received.</comment>');
+            fclose($socket);
+            return self::SUCCESS;
+        }
+
+        // Read request
+        $request = '';
+        while (($line = fgets($client)) !== false) {
+            $request .= $line;
+            if (trim($line) === '') {
+                break;
+            }
+        }
+
+        $output->writeln('<info>Request received!</info>');
+
+        // Parse and display
+        if (preg_match('/GET\s+([^\s]+)/', $request, $matches)) {
+            $uri = $matches[1];
+            $parts = parse_url($uri);
+            parse_str($parts['query'] ?? '', $params);
+            $output->writeln('Path: ' . ($parts['path'] ?? '/'));
+            $output->writeln('Params: ' . json_encode($params));
+        }
+
+        // Send success response
+        $this->sendResponse($client, 200, $this->getSuccessHtml());
+        fclose($client);
+        fclose($socket);
+
+        $output->writeln('');
+        $output->writeln('<info>Test complete! The callback URL is working.</info>');
+        $output->writeln("Register this callback URL in Buddy: http://127.0.0.1:{$port}/callback");
+
+        return self::SUCCESS;
     }
 
     /**
