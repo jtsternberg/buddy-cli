@@ -19,11 +19,11 @@ class ShowCommand extends BaseCommand
             ->setName('executions:show')
             ->setDescription('Show execution details')
             ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID')
-            ->addOption('pipeline', null, InputOption::VALUE_REQUIRED, 'Pipeline ID (required)')
             ->addOption('logs', null, InputOption::VALUE_NONE, 'Show action logs');
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
+        $this->addPipelineOption();
         parent::configure();
     }
 
@@ -31,15 +31,10 @@ class ShowCommand extends BaseCommand
     {
         $workspace = $this->requireWorkspace($input);
         $project = $this->requireProject($input);
+        $pipelineId = $this->requirePipeline($input);
         $executionId = (int) $input->getArgument('execution-id');
-        $pipelineId = $input->getOption('pipeline');
 
-        if ($pipelineId === null) {
-            $output->writeln('<error>Pipeline ID is required. Use --pipeline=<id></error>');
-            return self::FAILURE;
-        }
-
-        $execution = $this->getBuddyService()->getExecution($workspace, $project, (int) $pipelineId, $executionId);
+        $execution = $this->getBuddyService()->getExecution($workspace, $project, $pipelineId, $executionId);
 
         if ($this->isJsonOutput($input)) {
             $this->outputJson($output, $execution);
@@ -83,29 +78,6 @@ class ShowCommand extends BaseCommand
         }
 
         return self::SUCCESS;
-    }
-
-    private function formatDuration(?string $start, ?string $finish): string
-    {
-        if ($start === null) {
-            return '-';
-        }
-
-        try {
-            $startDate = new \DateTimeImmutable($start);
-            $endDate = $finish !== null ? new \DateTimeImmutable($finish) : new \DateTimeImmutable();
-            $diff = $endDate->diff($startDate);
-
-            if ($diff->h > 0) {
-                return sprintf('%dh %dm', $diff->h, $diff->i);
-            }
-            if ($diff->i > 0) {
-                return sprintf('%dm %ds', $diff->i, $diff->s);
-            }
-            return sprintf('%ds', $diff->s);
-        } catch (\Exception) {
-            return '-';
-        }
     }
 
     private function showLogs(OutputInterface $output, array $actionExecutions): void

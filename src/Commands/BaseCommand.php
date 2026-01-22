@@ -86,6 +86,23 @@ abstract class BaseCommand extends Command
         return $this;
     }
 
+    protected function addPipelineOption(): static
+    {
+        $this->addOption('pipeline', null, InputOption::VALUE_REQUIRED, 'Pipeline ID');
+        return $this;
+    }
+
+    protected function requirePipeline(InputInterface $input): int
+    {
+        $pipelineId = $input->getOption('pipeline');
+
+        if ($pipelineId === null) {
+            throw new \RuntimeException('Pipeline ID is required. Use --pipeline=<id>');
+        }
+
+        return (int) $pipelineId;
+    }
+
     protected function formatStatus(string $status): string
     {
         return match ($status) {
@@ -131,6 +148,29 @@ abstract class BaseCommand extends Command
             return $date->format('Y-m-d H:i');
         } catch (\Exception) {
             return $datetime;
+        }
+    }
+
+    protected function formatDuration(?string $start, ?string $finish): string
+    {
+        if ($start === null) {
+            return '-';
+        }
+
+        try {
+            $startDate = new \DateTimeImmutable($start);
+            $endDate = $finish !== null ? new \DateTimeImmutable($finish) : new \DateTimeImmutable();
+            $diff = $endDate->diff($startDate);
+
+            if ($diff->h > 0) {
+                return sprintf('%dh %dm', $diff->h, $diff->i);
+            }
+            if ($diff->i > 0) {
+                return sprintf('%dm %ds', $diff->i, $diff->s);
+            }
+            return sprintf('%ds', $diff->s);
+        } catch (\Exception) {
+            return '-';
         }
     }
 }

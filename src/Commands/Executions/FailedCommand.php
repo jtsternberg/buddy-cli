@@ -8,7 +8,6 @@ use BuddyCli\Commands\BaseCommand;
 use BuddyCli\Output\TableFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class FailedCommand extends BaseCommand
@@ -18,11 +17,11 @@ class FailedCommand extends BaseCommand
         $this
             ->setName('executions:failed')
             ->setDescription('Show failed action details from an execution')
-            ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID')
-            ->addOption('pipeline', null, InputOption::VALUE_REQUIRED, 'Pipeline ID (required)');
+            ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID');
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
+        $this->addPipelineOption();
         parent::configure();
     }
 
@@ -30,15 +29,10 @@ class FailedCommand extends BaseCommand
     {
         $workspace = $this->requireWorkspace($input);
         $project = $this->requireProject($input);
+        $pipelineId = $this->requirePipeline($input);
         $executionId = (int) $input->getArgument('execution-id');
-        $pipelineId = $input->getOption('pipeline');
 
-        if ($pipelineId === null) {
-            $output->writeln('<error>Pipeline ID is required. Use --pipeline=<id></error>');
-            return self::FAILURE;
-        }
-
-        $execution = $this->getBuddyService()->getExecution($workspace, $project, (int) $pipelineId, $executionId);
+        $execution = $this->getBuddyService()->getExecution($workspace, $project, $pipelineId, $executionId);
 
         if ($this->isJsonOutput($input)) {
             // Filter to only failed actions

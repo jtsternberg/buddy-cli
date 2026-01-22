@@ -17,12 +17,12 @@ class ListCommand extends BaseCommand
         $this
             ->setName('executions:list')
             ->setDescription('List recent executions')
-            ->addOption('pipeline', null, InputOption::VALUE_REQUIRED, 'Pipeline ID')
             ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Filter by status (SUCCESSFUL, FAILED, INPROGRESS)')
             ->addOption('limit', 'l', InputOption::VALUE_REQUIRED, 'Number of executions to show', '10');
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
+        $this->addPipelineOption();
         parent::configure();
     }
 
@@ -30,12 +30,7 @@ class ListCommand extends BaseCommand
     {
         $workspace = $this->requireWorkspace($input);
         $project = $this->requireProject($input);
-        $pipelineId = $input->getOption('pipeline');
-
-        if ($pipelineId === null) {
-            $output->writeln('<error>Pipeline ID is required. Use --pipeline=<id></error>');
-            return self::FAILURE;
-        }
+        $pipelineId = $this->requirePipeline($input);
 
         $filters = [
             'per_page' => (int) $input->getOption('limit'),
@@ -45,7 +40,7 @@ class ListCommand extends BaseCommand
             $filters['status'] = strtoupper($status);
         }
 
-        $response = $this->getBuddyService()->getExecutions($workspace, $project, (int) $pipelineId, $filters);
+        $response = $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, $filters);
         $executions = $response['executions'] ?? [];
 
         if ($this->isJsonOutput($input)) {
@@ -75,26 +70,4 @@ class ListCommand extends BaseCommand
         return self::SUCCESS;
     }
 
-    private function formatDuration(?string $start, ?string $finish): string
-    {
-        if ($start === null) {
-            return '-';
-        }
-
-        try {
-            $startDate = new \DateTimeImmutable($start);
-            $endDate = $finish !== null ? new \DateTimeImmutable($finish) : new \DateTimeImmutable();
-            $diff = $endDate->diff($startDate);
-
-            if ($diff->h > 0) {
-                return sprintf('%dh %dm', $diff->h, $diff->i);
-            }
-            if ($diff->i > 0) {
-                return sprintf('%dm %ds', $diff->i, $diff->s);
-            }
-            return sprintf('%ds', $diff->s);
-        } catch (\Exception) {
-            return '-';
-        }
-    }
 }
