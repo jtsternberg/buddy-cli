@@ -14,6 +14,8 @@ class ConfigService
         'token' => 'BUDDY_TOKEN',
         'workspace' => 'BUDDY_WORKSPACE',
         'project' => 'BUDDY_PROJECT',
+        'client_id' => 'BUDDY_CLIENT_ID',
+        'client_secret' => 'BUDDY_CLIENT_SECRET',
     ];
 
     public function __construct()

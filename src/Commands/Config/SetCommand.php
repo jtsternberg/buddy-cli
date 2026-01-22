@@ -27,7 +27,7 @@ class SetCommand extends BaseCommand
         $key = $input->getArgument('key');
         $value = $input->getArgument('value');
 
-        $validKeys = ['token', 'workspace', 'project', 'default_format'];
+        $validKeys = ['token', 'workspace', 'project', 'default_format', 'client_id', 'client_secret'];
         if (!in_array($key, $validKeys, true)) {
             $output->writeln("<error>Invalid key '{$key}'. Valid keys: " . implode(', ', $validKeys) . '</error>');
             return self::FAILURE;

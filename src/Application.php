@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace BuddyCli;
 
+use BuddyCli\Commands\Auth\LoginCommand;
+use BuddyCli\Commands\Auth\LogoutCommand;
 use BuddyCli\Commands\Config\ClearCommand as ConfigClearCommand;
 use BuddyCli\Commands\Config\SetCommand as ConfigSetCommand;
 use BuddyCli\Commands\Config\ShowCommand as ConfigShowCommand;
@@ -48,7 +50,7 @@ class Application extends ConsoleApplication
             $token = $this->configService->get('token');
             if ($token === null) {
                 throw new \RuntimeException(
-                    "No API token configured. Set BUDDY_TOKEN environment variable or run 'buddy config:set token <your-token>'"
+                    "No API token configured. Run 'buddy login' to authenticate, or set BUDDY_TOKEN environment variable."
                 );
             }
             $this->buddyService = new BuddyService($token);
@@ -59,6 +61,10 @@ class Application extends ConsoleApplication
 
     private function registerCommands(): void
     {
+        // Auth commands
+        $this->add(new LoginCommand($this));
+        $this->add(new LogoutCommand($this));
+
         // Config commands
         $this->add(new ConfigShowCommand($this));
         $this->add(new ConfigSetCommand($this));
