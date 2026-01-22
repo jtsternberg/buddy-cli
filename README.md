@@ -1,5 +1,7 @@
 # The (Un)official Buddy Works CLI
 
+![buddy-cli](.github/buddy-cli-splash.png)
+
 A PHP CLI tool for interacting with [Buddy.works](https://buddy.works) CI/CD pipelines.
 
 > **Note:** The official [buddy-works/buddy-cli](https://github.com/buddy-works/buddy-cli) has been abandoned. This project provides a maintained alternative.
