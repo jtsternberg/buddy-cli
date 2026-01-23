@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace BuddyCli;
 
+use BuddyCli\Commands\Actions\CreateCommand as ActionsCreateCommand;
+use BuddyCli\Commands\Actions\DeleteCommand as ActionsDeleteCommand;
+use BuddyCli\Commands\Actions\ListCommand as ActionsListCommand;
+use BuddyCli\Commands\Actions\ShowCommand as ActionsShowCommand;
+use BuddyCli\Commands\Actions\UpdateCommand as ActionsUpdateCommand;
 use BuddyCli\Commands\Auth\LoginCommand;
 use BuddyCli\Commands\Auth\LogoutCommand;
 use BuddyCli\Commands\Config\ClearCommand as ConfigClearCommand;
@@ -95,6 +100,13 @@ class Application extends ConsoleApplication
         $this->add(new ExecutionsListCommand($this));
         $this->add(new ExecutionsShowCommand($this));
         $this->add(new FailedCommand($this));
+
+        // Action commands
+        $this->add(new ActionsListCommand($this));
+        $this->add(new ActionsShowCommand($this));
+        $this->add(new ActionsCreateCommand($this));
+        $this->add(new ActionsUpdateCommand($this));
+        $this->add(new ActionsDeleteCommand($this));
 
         // Variable commands
         $this->add(new VariablesListCommand($this));

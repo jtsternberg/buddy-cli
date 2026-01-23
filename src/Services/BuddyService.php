@@ -97,6 +97,27 @@ class BuddyService
         );
     }
 
+    public function getPipelineAction(string $workspace, string $projectName, int $pipelineId, int $actionId): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiPipelines()->getPipelineAction($workspace, $projectName, $pipelineId, $actionId)->getBody()
+        );
+    }
+
+    public function updatePipelineAction(string $workspace, string $projectName, int $pipelineId, int $actionId, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiPipelines()->editPipelineAction($data, $workspace, $projectName, $pipelineId, $actionId)->getBody()
+        );
+    }
+
+    public function deletePipelineAction(string $workspace, string $projectName, int $pipelineId, int $actionId): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiPipelines()->deletePipelineAction($workspace, $projectName, $pipelineId, $actionId)->getBody()
+        );
+    }
+
     // Execution methods
 
     public function getExecutions(string $workspace, string $projectName, int $pipelineId, array $filters = []): array
