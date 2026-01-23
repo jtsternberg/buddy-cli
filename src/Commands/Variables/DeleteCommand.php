@@ -18,7 +18,19 @@ class DeleteCommand extends BaseCommand
         $this
             ->setName('vars:delete')
             ->setDescription('Delete an environment variable')
-            ->addArgument('variable-id', InputArgument::REQUIRED, 'Variable ID');
+            ->addArgument('variable-id', InputArgument::REQUIRED, 'Variable ID')
+            ->setHelp(<<<'HELP'
+Deletes an environment variable by ID.
+
+Prompts for confirmation unless <info>--force</info> is specified.
+
+Options:
+  -f, --force   Skip confirmation prompt
+
+Examples:
+  buddy vars:delete 12345
+  buddy vars:delete 12345 --force
+HELP);
 
         $this->addWorkspaceOption();
         $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip confirmation');

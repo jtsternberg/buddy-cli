@@ -18,7 +18,28 @@ class SetCommand extends BaseCommand
             ->setName('vars:set')
             ->setDescription('Create or update an environment variable')
             ->addArgument('key', InputArgument::REQUIRED, 'Variable key')
-            ->addArgument('value', InputArgument::REQUIRED, 'Variable value');
+            ->addArgument('value', InputArgument::REQUIRED, 'Variable value')
+            ->setHelp(<<<'HELP'
+Creates or updates an environment variable. If a variable with the same key
+exists at the same scope, it will be updated; otherwise a new one is created.
+
+Options:
+  -p, --project      Scope to a specific project
+      --pipeline     Scope to a specific pipeline ID
+  -t, --type         Variable type: VAR (default), SSH_KEY, SSH_PUBLIC_KEY
+  -e, --encrypted    Encrypt the value (cannot be read back)
+  -s, --settable     Allow value override during manual pipeline run
+  -d, --description  Add a description for the variable
+
+Scope hierarchy (most specific wins):
+  action > pipeline > project > workspace
+
+Examples:
+  buddy vars:set API_KEY "secret123" --encrypted
+  buddy vars:set NODE_ENV production --project=my-project
+  buddy vars:set DEBUG true --pipeline=12345 --settable
+  buddy vars:set DEPLOY_KEY "..." --type=SSH_KEY --encrypted
+HELP);
 
         $this->addWorkspaceOption();
         $this->addOption('project', 'p', InputOption::VALUE_REQUIRED, 'Scope to project');

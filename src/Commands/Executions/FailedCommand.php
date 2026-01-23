@@ -17,7 +17,16 @@ class FailedCommand extends BaseCommand
         $this
             ->setName('executions:failed')
             ->setDescription('Show failed action details from an execution')
-            ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID');
+            ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID')
+            ->setHelp(<<<'HELP'
+Shows details and logs for failed actions in an execution.
+
+Filters the execution to only show actions that failed, then fetches and
+displays the full logs for each failed action to help diagnose the issue.
+
+Example:
+  buddy executions:failed 67890 --pipeline=12345
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

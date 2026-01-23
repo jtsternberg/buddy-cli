@@ -17,7 +17,16 @@ class CancelCommand extends BaseCommand
         $this
             ->setName('pipelines:cancel')
             ->setDescription('Cancel a running execution')
-            ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID');
+            ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID')
+            ->setHelp(<<<'HELP'
+Cancels the currently running execution of the specified pipeline.
+
+If no execution is in progress, the command succeeds with a message indicating
+no running execution was found.
+
+Example:
+  buddy pipelines:cancel 12345 --project=my-project
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

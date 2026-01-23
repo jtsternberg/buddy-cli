@@ -24,7 +24,26 @@ class RunCommand extends BaseCommand
             ->addOption('revision', 'r', InputOption::VALUE_REQUIRED, 'Git revision (commit SHA)')
             ->addOption('tag', 't', InputOption::VALUE_REQUIRED, 'Tag name')
             ->addOption('comment', 'c', InputOption::VALUE_REQUIRED, 'Execution comment')
-            ->addOption('wait', null, InputOption::VALUE_NONE, 'Wait for execution to complete');
+            ->addOption('wait', null, InputOption::VALUE_NONE, 'Wait for execution to complete')
+            ->setHelp(<<<'HELP'
+Triggers a new execution of the specified pipeline.
+
+For pipelines with wildcard ref patterns (no fixed branch), you must specify
+<info>--branch</info>, <info>--tag</info>, or <info>--revision</info>.
+
+Options:
+  -b, --branch     Branch name to run against
+  -r, --revision   Specific commit SHA to run
+  -t, --tag        Tag name to run against
+  -c, --comment    Comment to attach to this execution
+      --wait       Wait for execution to complete before returning
+
+Examples:
+  buddy pipelines:run 12345 --project=my-project
+  buddy pipelines:run 12345 --branch=feature/new-feature
+  buddy pipelines:run 12345 --revision=abc123 --comment="Hotfix deploy"
+  buddy pipelines:run 12345 --wait
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
