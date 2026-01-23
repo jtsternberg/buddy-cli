@@ -72,13 +72,37 @@ class ShowCommand extends BaseCommand
                     $action['id'] ?? '-',
                     $action['name'] ?? '-',
                     $action['type'] ?? '-',
+                    $this->formatTriggerConditions($action['trigger_conditions'] ?? []),
                 ];
             }
 
-            TableFormatter::render($output, ['ID', 'Name', 'Type'], $rows);
+            TableFormatter::render($output, ['ID', 'Name', 'Type', 'Conditions'], $rows);
         }
 
         return self::SUCCESS;
+    }
+
+    private function formatTriggerConditions(array $conditions): string
+    {
+        if (empty($conditions)) {
+            return '-';
+        }
+
+        $formatted = [];
+        foreach ($conditions as $cond) {
+            $type = $cond['trigger_condition'] ?? '';
+            $key = $cond['trigger_variable_key'] ?? '';
+            $value = $cond['trigger_variable_value'] ?? '';
+
+            // Format as "VAR_IS_NOT:KEY=val" or similar
+            if ($key) {
+                $formatted[] = "{$type}:{$key}={$value}";
+            } else {
+                $formatted[] = $type;
+            }
+        }
+
+        return implode(', ', $formatted);
     }
 
     private function buildPipelineConfig(array $pipeline, array $actions): array
@@ -139,6 +163,9 @@ class ShowCommand extends BaseCommand
         }
         if (isset($action['working_directory'])) {
             $config['working_directory'] = $action['working_directory'];
+        }
+        if (!empty($action['trigger_conditions'])) {
+            $config['trigger_conditions'] = $action['trigger_conditions'];
         }
 
         return array_filter($config, fn($v) => $v !== null);
