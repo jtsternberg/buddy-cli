@@ -33,7 +33,34 @@ class LoginCommand extends Command
             ->addOption('client-secret', null, InputOption::VALUE_REQUIRED, 'OAuth client secret')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Port for callback server', (string) self::DEFAULT_PORT)
             ->addOption('no-browser', null, InputOption::VALUE_NONE, 'Print URL instead of opening browser')
-            ->addOption('test', null, InputOption::VALUE_NONE, 'Test callback server without OAuth (for verifying setup)');
+            ->addOption('test', null, InputOption::VALUE_NONE, 'Test callback server without OAuth (for verifying setup)')
+            ->setHelp(<<<'HELP'
+Authenticate with Buddy via OAuth browser flow.
+
+<comment>Setup Requirements:</comment>
+1. Create an OAuth app at https://app.buddy.works/my-apps
+2. Set callback URL to: http://127.0.0.1:8085/callback
+3. Provide credentials via options, env vars, or config:set
+
+<comment>Credential Sources (checked in order):</comment>
+  --client-id/--client-secret options
+  BUDDY_CLIENT_ID/BUDDY_CLIENT_SECRET environment variables
+  Values stored with config:set client_id/client_secret
+
+Options:
+      --client-id      OAuth client ID
+      --client-secret  OAuth client secret
+      --port           Local server port for callback (default: 8085)
+      --no-browser     Print auth URL instead of opening browser (for SSH/headless)
+      --test           Verify callback server works without full OAuth flow
+
+Examples:
+  buddy login
+  buddy login --client-id=abc --client-secret=xyz
+  buddy login --port=9000
+  buddy login --no-browser
+  buddy login --test
+HELP);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

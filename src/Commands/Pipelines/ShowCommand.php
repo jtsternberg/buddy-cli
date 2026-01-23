@@ -20,7 +20,26 @@ class ShowCommand extends BaseCommand
             ->setName('pipelines:show')
             ->setDescription('Show pipeline details')
             ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID')
-            ->addOption('yaml', 'y', InputOption::VALUE_NONE, 'Output as YAML configuration');
+            ->addOption('yaml', 'y', InputOption::VALUE_NONE, 'Output as YAML configuration')
+            ->setHelp(<<<'HELP'
+Display detailed information about a pipeline including its actions.
+
+Default output shows pipeline metadata (status, trigger, branch) and a table
+of configured actions. Use <info>--yaml</info> or <info>--json</info> for machine-readable formats.
+
+Output Formats:
+  (default)  Human-readable table with pipeline info and actions
+  --yaml     YAML config (same format as pipelines:get, can be used with create)
+  --json     Full API response as JSON
+
+Options:
+  -y, --yaml  Output as YAML configuration (to stdout, not a file)
+
+Examples:
+  buddy pipelines:show 12345 --project=my-project
+  buddy pipelines:show 12345 --yaml
+  buddy pipelines:show 12345 --json
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

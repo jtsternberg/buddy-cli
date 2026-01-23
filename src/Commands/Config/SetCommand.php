@@ -17,7 +17,25 @@ class SetCommand extends BaseCommand
             ->setName('config:set')
             ->setDescription('Set a configuration value')
             ->addArgument('key', InputArgument::REQUIRED, 'Configuration key (token, workspace, project)')
-            ->addArgument('value', InputArgument::REQUIRED, 'Configuration value');
+            ->addArgument('value', InputArgument::REQUIRED, 'Configuration value')
+            ->setHelp(<<<'HELP'
+Store a configuration value in the local config file (~/.buddy-cli.json).
+
+Available keys:
+  token           API access token (from OAuth or personal access token)
+  workspace       Default workspace domain
+  project         Default project name
+  default_format  Output format: table (default), json, or yaml
+  client_id       OAuth client ID for login command
+  client_secret   OAuth client secret for login command
+
+Examples:
+  buddy config:set workspace my-workspace
+  buddy config:set project my-project
+  buddy config:set default_format json
+  buddy config:set client_id abc123
+  buddy config:set client_secret xyz789
+HELP);
 
         parent::configure();
     }

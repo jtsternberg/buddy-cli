@@ -14,7 +14,21 @@ class ClearCommand extends BaseCommand
     {
         $this
             ->setName('config:clear')
-            ->setDescription('Clear all configuration');
+            ->setDescription('Clear all configuration')
+            ->setHelp(<<<'HELP'
+<fg=red>⚠ DESTRUCTIVE:</> Removes all stored configuration including authentication.
+
+This deletes the config file (~/.buddy-cli.json) containing:
+  - API token (you will need to re-authenticate)
+  - Workspace and project defaults
+  - OAuth credentials
+  - All other saved settings
+
+Use <info>config:show</info> to review current config before clearing.
+
+Example:
+  buddy config:clear
+HELP);
 
         parent::configure();
     }
