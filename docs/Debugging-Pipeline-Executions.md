@@ -126,23 +126,24 @@ The first action passes, but subsequent actions are skipped. The `--logs` output
 1. The first action's logs show `IS_DRAFT: 'true'`
 2. The skipped actions' logs say "Action has been skipped because trigger conditions were not met"
 
-To inspect trigger conditions, use `--json` and look at the `trigger_conditions` array:
+To inspect trigger conditions, use `pipelines:show` which displays a "Conditions" column:
 
 ```bash
-buddy pipelines:show 12345 --project=my-project --json | jq '.actions[1].trigger_conditions'
+buddy pipelines:show 12345 --project=my-project
 ```
 
-```json
-[
-  {
-    "trigger_condition": "VAR_IS_NOT",
-    "trigger_variable_value": "true",
-    "trigger_variable_key": "IS_DRAFT"
-  }
-]
+```
+Actions:
++-------+------------------------------------+--------------+---------------------------+
+| ID    | Name                               | Type         | Conditions                |
++-------+------------------------------------+--------------+---------------------------+
+| 10001 | Get GitHub Info & Setup Vars       | GIT_HUB_CLI  | -                         |
+| 10002 | Run NPM Install                    | BUILD        | VAR_IS_NOT:IS_DRAFT=true  |
+| ...   | ...                                | ...          | ...                       |
++-------+------------------------------------+--------------+---------------------------+
 ```
 
-This confirms the action only runs when `IS_DRAFT` is NOT `"true"`. (Your pipeline may have different logic.)
+The `VAR_IS_NOT:IS_DRAFT=true` condition confirms the action only runs when `IS_DRAFT` is NOT `"true"`.
 
 ## Step 7: Provide Full PR Context
 
