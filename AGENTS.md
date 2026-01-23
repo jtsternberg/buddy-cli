@@ -16,8 +16,9 @@ PHP CLI tool for Buddy.works CI/CD pipelines, built on `buddy-works/buddy-works-
 # Install dependencies
 composer install
 
-# Run the CLI (after setup)
-./bin/buddy <command>
+# Run the CLI
+buddy <command>                # Global (after self:install)
+./bin/buddy <command>          # Development
 
 # Run tests
 ./vendor/bin/phpunit

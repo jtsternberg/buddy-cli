@@ -2,17 +2,73 @@
 
 ![buddy-cli](.github/buddy-cli-splash.jpg)
 
-A PHP CLI tool for interacting with [Buddy.works](https://buddy.works) CI/CD pipelines.
+A PHP CLI tool for managing [Buddy.works](https://buddy.works) CI/CD pipelines from the command line. Run pipelines, inspect executions, view logs, manage variables, and export/import pipeline configurations as YAML—all without leaving your terminal.
 
-> **Note:** The official [buddy-works/buddy-cli](https://github.com/buddy-works/buddy-cli) has been abandoned. This project provides a maintained alternative.
+Works great with LLM assistants for iterative debugging workflows. See [Debugging Pipeline Executions](docs/Debugging-Pipeline-Executions.md) for a real-world example.
+
+> [!NOTE]
+> The official [buddy-works/buddy-cli](https://github.com/buddy-works/buddy-cli) has been abandoned. This project provides a maintained alternative.
 
 ## Installation
+
+### As a Project Dependency
 
 ```bash
 composer require jtsternberg/buddy-cli --dev
 ```
 
-After installation, the `buddy` command is available via `vendor/bin/buddy`.
+The `buddy` command is available via `vendor/bin/buddy`.
+
+### Global Installation
+
+```bash
+composer global require jtsternberg/buddy-cli
+```
+
+Ensure `~/.composer/vendor/bin` is in your PATH, then run `buddy` from anywhere.
+
+### From Source
+
+```bash
+git clone https://github.com/jtsternberg/buddy-cli.git
+cd buddy-cli
+composer install
+./bin/buddy self:install
+```
+
+This creates a symlink in `~/.local/bin/buddy` (or similar) for pathless execution.
+
+## Shell Completion
+
+Enable tab-completion for commands, options, and arguments. Supports bash, zsh, and fish.
+
+### Bash (`~/.bashrc`):
+
+```bash
+# buddy-cli completions
+eval "$(buddy completion bash)"
+```
+
+### Zsh (`~/.zshrc`):
+
+First generate the completion file:
+```bash
+mkdir -p ~/.buddy-cli/completions
+buddy completion zsh > ~/.buddy-cli/completions/_buddy
+```
+
+Then add to `~/.zshrc` (before `compinit` if you call it manually):
+```bash
+# buddy-cli completions
+fpath=(~/.buddy-cli/completions $fpath)
+```
+
+### Fish (`~/.config/fish/config.fish`):
+
+```bash
+# buddy-cli completions
+buddy completion fish | source
+```
 
 ## Authentication
 
@@ -135,6 +191,10 @@ buddy config:show                         # Show current configuration
 buddy config:set <key> <value>            # Set configuration value
 buddy config:clear                        # Clear all configuration
 ```
+
+## Documentation
+
+- [Debugging Pipeline Executions](docs/Debugging-Pipeline-Executions.md) - Real-world walkthrough of diagnosing and fixing a failed pipeline run
 
 ## Options
 
