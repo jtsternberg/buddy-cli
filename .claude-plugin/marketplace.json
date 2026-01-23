@@ -1,0 +1,15 @@
+{
+  "name": "buddy-marketplace",
+  "description": "Local marketplace for buddy-cli plugin",
+  "owner": {
+    "name": "Justin Sternberg"
+  },
+  "plugins": [
+    {
+      "name": "buddy-cli",
+      "source": "./claude-plugin",
+      "description": "CI/CD pipeline management for Buddy.works",
+      "version": "1.0.0"
+    }
+  ]
+}

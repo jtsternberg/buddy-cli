@@ -169,4 +169,118 @@ class ConfigCommandsTest extends TestCase
         $data = json_decode($output, true);
         $this->assertTrue($data['success']);
     }
+
+    // config:validate tests
+
+    public function testConfigValidateMissingToken(): void
+    {
+        $command = $this->app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('No API token configured', $tester->getDisplay());
+    }
+
+    public function testConfigValidateMissingWorkspace(): void
+    {
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'token', 'value' => 'test-token']);
+
+        $command = $this->app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('No workspace configured', $tester->getDisplay());
+    }
+
+    public function testConfigValidateWarningMissingProject(): void
+    {
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'token', 'value' => 'test-token']);
+        $setTester->execute(['key' => 'workspace', 'value' => 'test-workspace']);
+
+        $command = $this->app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('No project configured', $tester->getDisplay());
+        $this->assertStringContainsString('Configuration valid', $tester->getDisplay());
+    }
+
+    public function testConfigValidateFullConfig(): void
+    {
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'token', 'value' => 'test-token']);
+        $setTester->execute(['key' => 'workspace', 'value' => 'test-workspace']);
+        $setTester->execute(['key' => 'project', 'value' => 'test-project']);
+
+        $command = $this->app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Configuration valid', $tester->getDisplay());
+        $this->assertStringNotContainsString('warning', strtolower($tester->getDisplay()));
+    }
+
+    public function testConfigValidateJsonOutput(): void
+    {
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'token', 'value' => 'test-token']);
+        $setTester->execute(['key' => 'workspace', 'value' => 'test-workspace']);
+
+        $command = $this->app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute(['--json' => true]);
+
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertTrue($data['valid']);
+        $this->assertEmpty($data['errors']);
+        $this->assertNotEmpty($data['warnings']);
+    }
+
+    public function testConfigValidateJsonOutputWithErrors(): void
+    {
+        $command = $this->app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute(['--json' => true]);
+
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertFalse($data['valid']);
+        $this->assertNotEmpty($data['errors']);
+    }
+
+    public function testConfigValidateWithEnvVars(): void
+    {
+        $this->setEnv('BUDDY_TOKEN', 'env-token');
+        $this->setEnv('BUDDY_WORKSPACE', 'env-workspace');
+        $this->setEnv('BUDDY_PROJECT', 'env-project');
+
+        // Need new app instance to pick up env vars
+        $app = new Application();
+        $command = $app->find('config:validate');
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Configuration valid', $tester->getDisplay());
+    }
 }

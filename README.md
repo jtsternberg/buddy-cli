@@ -147,8 +147,10 @@ buddy pipelines:update <id> <file>        # Update existing pipeline from YAML
 ```bash
 buddy executions:list --pipeline=<id>              # List recent executions
 buddy executions:show <exec-id> --pipeline=<id>    # Show execution details
-buddy executions:show <exec-id> --pipeline=<id> --logs  # Include action logs
-buddy executions:failed <exec-id> --pipeline=<id>  # Show failed action details
+buddy executions:show <exec-id> --pipeline=<id> --logs     # Include action logs
+buddy executions:show <exec-id> --pipeline=<id> --summary  # Compact status overview
+buddy executions:failed <exec-id> --pipeline=<id>           # Show failed action details
+buddy executions:failed <exec-id> --pipeline=<id> --analyze # Categorize error patterns
 ```
 
 ### Actions
@@ -190,6 +192,8 @@ buddy vars:delete <id> --force            # Delete without confirmation
 buddy config:show                         # Show current configuration
 buddy config:set <key> <value>            # Set configuration value
 buddy config:clear                        # Clear all configuration
+buddy config:validate                     # Validate config is complete
+buddy config:validate --test-api          # Also test API connectivity
 ```
 
 ## Documentation
@@ -203,6 +207,39 @@ All commands support:
 - `--workspace`, `-w` - Workspace name
 - `--project`, `-p` - Project name
 - `--json` - Output as JSON
+
+## Claude Code Plugin
+
+This repository includes a Claude Code plugin for AI-assisted CI/CD management. Control deployments and debug pipelines using natural language.
+
+### Quick Example
+
+```
+You: "Deploy to production and wait for it to finish"
+You: "Why did my last build fail?"
+You: "Show me what's currently running"
+```
+
+### Installation
+
+In Claude Code:
+```
+/plugin marketplace add jtsternberg/buddy-cli
+/plugin install buddy-cli
+```
+
+Or point to your existing copy of the buddy-cli repository:
+```
+/plugin marketplace add ./buddy-cli
+/plugin install buddy-cli
+```
+### Features
+
+- **Skills**: Auto-invoked when discussing pipelines, deployments, or build failures
+- **Commands**: `/buddy-cli:deploy`, `/buddy-cli:status`, `/buddy-cli:logs`
+- **Agent**: CI/CD specialist for complex multi-step workflows
+
+See `claude-plugin/.claude-plugin/README.md` for full documentation.
 
 ## License
 
