@@ -162,6 +162,52 @@ class BuddyService
         );
     }
 
+    // Variable methods
+
+    /**
+     * @param array<string, mixed> $filters Optional filters: projectName, pipelineId, actionId
+     */
+    public function getVariables(string $workspace, array $filters = []): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiVariables()->getVariables($workspace, $filters)->getBody()
+        );
+    }
+
+    public function getVariable(string $workspace, int $variableId): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiVariables()->getVariable($workspace, $variableId)->getBody()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data Variable data
+     */
+    public function createVariable(string $workspace, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiVariables()->addVariable($data, $workspace)->getBody()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data Variable data to update
+     */
+    public function updateVariable(string $workspace, int $variableId, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiVariables()->editVariable($data, $workspace, $variableId)->getBody()
+        );
+    }
+
+    public function deleteVariable(string $workspace, int $variableId): array
+    {
+        return $this->withAutoRefresh(
+            fn() => $this->buddy->getApiVariables()->deleteVariable($workspace, $variableId)->getBody()
+        );
+    }
+
     /**
      * Execute an API call with automatic token refresh on 401.
      */

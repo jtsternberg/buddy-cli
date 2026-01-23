@@ -27,6 +27,10 @@ use BuddyCli\Commands\Pipelines\ShowCommand as PipelinesShowCommand;
 use BuddyCli\Commands\Pipelines\UpdateCommand;
 use BuddyCli\Commands\Projects\ListCommand as ProjectsListCommand;
 use BuddyCli\Commands\Projects\ShowCommand as ProjectsShowCommand;
+use BuddyCli\Commands\Variables\DeleteCommand as VariablesDeleteCommand;
+use BuddyCli\Commands\Variables\ListCommand as VariablesListCommand;
+use BuddyCli\Commands\Variables\SetCommand as VariablesSetCommand;
+use BuddyCli\Commands\Variables\ShowCommand as VariablesShowCommand;
 use BuddyCli\Services\BuddyService;
 use BuddyCli\Services\ConfigService;
 use Symfony\Component\Console\Application as ConsoleApplication;
@@ -103,5 +107,11 @@ class Application extends ConsoleApplication
         $this->add(new ActionsCreateCommand($this));
         $this->add(new ActionsUpdateCommand($this));
         $this->add(new ActionsDeleteCommand($this));
+
+        // Variable commands
+        $this->add(new VariablesListCommand($this));
+        $this->add(new VariablesShowCommand($this));
+        $this->add(new VariablesSetCommand($this));
+        $this->add(new VariablesDeleteCommand($this));
     }
 }
