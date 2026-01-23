@@ -2,9 +2,12 @@
 
 ![buddy-cli](.github/buddy-cli-splash.jpg)
 
-A PHP CLI tool for interacting with [Buddy.works](https://buddy.works) CI/CD pipelines.
+A PHP CLI tool for managing [Buddy.works](https://buddy.works) CI/CD pipelines from the command line. Run pipelines, inspect executions, view logs, manage variables, and export/import pipeline configurations as YAML—all without leaving your terminal.
 
-> **Note:** The official [buddy-works/buddy-cli](https://github.com/buddy-works/buddy-cli) has been abandoned. This project provides a maintained alternative.
+Works great with LLM assistants for iterative debugging workflows. See [Debugging Pipeline Executions](docs/Debugging-Pipeline-Executions.md) for a real-world example.
+
+> [!NOTE]
+> The official [buddy-works/buddy-cli](https://github.com/buddy-works/buddy-cli) has been abandoned. This project provides a maintained alternative.
 
 ## Installation
 
@@ -135,6 +138,10 @@ buddy config:show                         # Show current configuration
 buddy config:set <key> <value>            # Set configuration value
 buddy config:clear                        # Clear all configuration
 ```
+
+## Documentation
+
+- [Debugging Pipeline Executions](docs/Debugging-Pipeline-Executions.md) - Real-world walkthrough of diagnosing and fixing a failed pipeline run
 
 ## Options
 
