@@ -67,6 +67,9 @@ BUDDY_PROJECT=<project-name>
 
 ## Commands
 
+> [!TIP]
+> Run `buddy <command> --help` for detailed documentation including all options, supported fields, and examples.
+
 ### Pipelines
 
 ```bash
