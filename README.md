@@ -144,6 +144,24 @@ All commands support:
 - `--project`, `-p` - Project name
 - `--json` - Output as JSON
 
+## Claude Code Plugin
+
+This repository includes a Claude Code plugin for AI-assisted CI/CD management.
+
+### Installation
+
+```bash
+claude --plugin-dir /path/to/buddy-cli
+```
+
+### Features
+
+- **Skills**: Auto-invoked guidance for pipeline management and troubleshooting
+- **Commands**: `/buddy-cli:deploy`, `/buddy-cli:status`, `/buddy-cli:logs`
+- **Agent**: CI/CD specialist for autonomous pipeline operations
+
+See `.claude-plugin/README.md` for full documentation.
+
 ## License
 
 MIT
