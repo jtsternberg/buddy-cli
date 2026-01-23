@@ -31,6 +31,7 @@ use BuddyCli\Commands\Variables\DeleteCommand as VariablesDeleteCommand;
 use BuddyCli\Commands\Variables\ListCommand as VariablesListCommand;
 use BuddyCli\Commands\Variables\SetCommand as VariablesSetCommand;
 use BuddyCli\Commands\Variables\ShowCommand as VariablesShowCommand;
+use BuddyCli\Commands\Self\InstallCommand as SelfInstallCommand;
 use BuddyCli\Services\BuddyService;
 use BuddyCli\Services\ConfigService;
 use Symfony\Component\Console\Application as ConsoleApplication;
@@ -113,5 +114,8 @@ class Application extends ConsoleApplication
         $this->add(new VariablesShowCommand($this));
         $this->add(new VariablesSetCommand($this));
         $this->add(new VariablesDeleteCommand($this));
+
+        // Self commands
+        $this->add(new SelfInstallCommand($this));
     }
 }
