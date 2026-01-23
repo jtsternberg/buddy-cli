@@ -19,10 +19,10 @@ Show current and recent pipeline execution status.
    buddy executions:list --pipeline=<id> --json
    ```
 
-2. **Parse and display**: Use format_status.py for readable output
+2. **Parse and display**: Use format_status.php for readable output
    ```bash
    buddy executions:show <exec-id> --pipeline=<id> --json | \
-     python ${CLAUDE_PLUGIN_ROOT}/scripts/format_status.py
+     php ${CLAUDE_PLUGIN_ROOT}/scripts/format_status.php
    ```
 
 3. **Highlight important info**:

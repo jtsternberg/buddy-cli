@@ -54,7 +54,7 @@ Add `--json` to any command for machine-readable output:
 
 ```bash
 buddy pipelines:list --json | jq '.[] | {id, name, status}'
-buddy executions:show <id> --pipeline=<id> --json | python ${CLAUDE_PLUGIN_ROOT}/scripts/format_status.py
+buddy executions:show <id> --pipeline=<id> --json | php ${CLAUDE_PLUGIN_ROOT}/scripts/format_status.php
 ```
 
 ## Common Workflows

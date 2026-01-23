@@ -31,7 +31,7 @@ buddy executions:show <exec-id> --pipeline=<id> --logs
 ```bash
 # Parse errors automatically
 buddy executions:show <exec-id> --pipeline=<id> --logs --json | \
-  python ${CLAUDE_PLUGIN_ROOT}/scripts/extract_errors.py
+  php ${CLAUDE_PLUGIN_ROOT}/scripts/extract_errors.php
 ```
 
 ## Common Failure Patterns
