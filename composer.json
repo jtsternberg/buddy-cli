@@ -3,6 +3,27 @@
     "description": "CLI tool for interacting with Buddy.works CI/CD pipelines",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "buddy",
+        "buddy-works",
+        "ci",
+        "cd",
+        "cli",
+        "devops",
+        "pipelines"
+    ],
+    "homepage": "https://github.com/jtsternberg/buddy-cli",
+    "authors": [
+        {
+            "name": "Justin Sternberg",
+            "email": "me@jtsternberg.com",
+            "homepage": "https://jtsternberg.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/jtsternberg/buddy-cli/issues",
+        "source": "https://github.com/jtsternberg/buddy-cli"
+    },
     "require": {
         "php": "^8.0",
         "buddy-works/buddy-works-php-api": "^1.4",
