@@ -1,11 +1,11 @@
-# /logs
+# /buddy-cli:logs
 
 Fetch and display pipeline execution logs.
 
 ## Usage
 
 ```
-/logs [execution-id] [--pipeline=<id>] [--action=<name>] [--errors-only]
+/buddy-cli:logs [execution-id] [--pipeline=<id>] [--action=<name>] [--errors-only]
 ```
 
 ## Arguments
@@ -52,13 +52,13 @@ For failed actions, highlight:
 
 ## Example Interactions
 
-User: `/logs`
+User: `/buddy-cli:logs`
 → Show logs from most recent execution
 
-User: `/logs 12345 --pipeline=67890`
+User: `/buddy-cli:logs 12345 --pipeline=67890`
 → Show logs for specific execution
 
-User: `/logs --errors-only`
+User: `/buddy-cli:logs --errors-only`
 → Show only failed action logs from recent execution
 
 ## Error Handling

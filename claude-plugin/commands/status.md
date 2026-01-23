@@ -1,11 +1,11 @@
-# /status
+# /buddy-cli:status
 
 Show current and recent pipeline execution status.
 
 ## Usage
 
 ```
-/status [pipeline-name-or-id]
+/buddy-cli:status [pipeline-name-or-id]
 ```
 
 ## Arguments
@@ -27,7 +27,7 @@ Show current and recent pipeline execution status.
 
 3. **Highlight important info**:
    - Currently running executions (show progress)
-   - Failed executions (suggest `/logs` to investigate)
+   - Failed executions (suggest `/buddy-cli:logs` to investigate)
    - Recent successful deployments
 
 ## Output Format
@@ -46,10 +46,10 @@ For running executions, show which action is currently executing.
 
 ## Example Interactions
 
-User: `/status`
+User: `/buddy-cli:status`
 → Show status for all pipelines with recent activity
 
-User: `/status production`
+User: `/buddy-cli:status production`
 → Show detailed status for production pipeline
 
 ## Error Handling
