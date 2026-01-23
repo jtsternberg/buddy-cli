@@ -23,15 +23,11 @@ buddy executions:show <exec-id> --pipeline=<id>
 # Show failed actions with logs
 buddy executions:failed <exec-id> --pipeline=<id>
 
-# Or get all logs
-buddy executions:show <exec-id> --pipeline=<id> --logs
-```
+# Analyze and categorize errors
+buddy executions:failed <exec-id> --pipeline=<id> --analyze
 
-### 3. Analyze Errors
-```bash
-# Parse errors automatically
-buddy executions:show <exec-id> --pipeline=<id> --logs --json | \
-  php ${CLAUDE_PLUGIN_ROOT}/scripts/extract_errors.php
+# Compact status overview
+buddy executions:show <exec-id> --pipeline=<id> --summary
 ```
 
 ## Common Failure Patterns
@@ -76,7 +72,8 @@ buddy pipelines:cancel <pipeline-id>
 
 ### Check configuration
 ```bash
-buddy config:show
+buddy config:validate
+buddy config:validate --test-api
 buddy vars:list --pipeline=<id>
 ```
 

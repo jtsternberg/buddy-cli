@@ -77,12 +77,14 @@ Show execution details.
 ```bash
 buddy executions:show <exec-id> --pipeline=<pipeline-id>
 buddy executions:show <exec-id> --pipeline=<pipeline-id> --logs
+buddy executions:show <exec-id> --pipeline=<pipeline-id> --summary  # Compact status view
 ```
 
 ### executions:failed
 Show failed action details with logs.
 ```bash
 buddy executions:failed <exec-id> --pipeline=<pipeline-id>
+buddy executions:failed <exec-id> --pipeline=<pipeline-id> --analyze  # Categorize errors
 ```
 
 ## Action Commands
@@ -184,6 +186,13 @@ buddy config:set project <value>
 Clear all configuration.
 ```bash
 buddy config:clear
+```
+
+### config:validate
+Validate configuration is complete and working.
+```bash
+buddy config:validate
+buddy config:validate --test-api  # Also test API connectivity
 ```
 
 ## Authentication Commands

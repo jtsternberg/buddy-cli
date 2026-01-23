@@ -147,8 +147,10 @@ buddy pipelines:update <id> <file>        # Update existing pipeline from YAML
 ```bash
 buddy executions:list --pipeline=<id>              # List recent executions
 buddy executions:show <exec-id> --pipeline=<id>    # Show execution details
-buddy executions:show <exec-id> --pipeline=<id> --logs  # Include action logs
-buddy executions:failed <exec-id> --pipeline=<id>  # Show failed action details
+buddy executions:show <exec-id> --pipeline=<id> --logs     # Include action logs
+buddy executions:show <exec-id> --pipeline=<id> --summary  # Compact status overview
+buddy executions:failed <exec-id> --pipeline=<id>           # Show failed action details
+buddy executions:failed <exec-id> --pipeline=<id> --analyze # Categorize error patterns
 ```
 
 ### Actions
@@ -190,6 +192,8 @@ buddy vars:delete <id> --force            # Delete without confirmation
 buddy config:show                         # Show current configuration
 buddy config:set <key> <value>            # Set configuration value
 buddy config:clear                        # Clear all configuration
+buddy config:validate                     # Validate config is complete
+buddy config:validate --test-api          # Also test API connectivity
 ```
 
 ## Documentation

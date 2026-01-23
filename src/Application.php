@@ -14,6 +14,7 @@ use BuddyCli\Commands\Auth\LogoutCommand;
 use BuddyCli\Commands\Config\ClearCommand as ConfigClearCommand;
 use BuddyCli\Commands\Config\SetCommand as ConfigSetCommand;
 use BuddyCli\Commands\Config\ShowCommand as ConfigShowCommand;
+use BuddyCli\Commands\Config\ValidateCommand as ConfigValidateCommand;
 use BuddyCli\Commands\Executions\FailedCommand;
 use BuddyCli\Commands\Executions\ListCommand as ExecutionsListCommand;
 use BuddyCli\Commands\Executions\ShowCommand as ExecutionsShowCommand;
@@ -82,6 +83,7 @@ class Application extends ConsoleApplication
         $this->add(new ConfigShowCommand($this));
         $this->add(new ConfigSetCommand($this));
         $this->add(new ConfigClearCommand($this));
+        $this->add(new ConfigValidateCommand($this));
 
         // Project commands
         $this->add(new ProjectsListCommand($this));
