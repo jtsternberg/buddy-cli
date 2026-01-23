@@ -82,13 +82,44 @@ buddy config:set token <your-token>
 
 ### OAuth Login
 
+#### 1. Create OAuth Application
+
+Create an OAuth app at [buddy.works/api/apps](https://app.buddy.works/my-apps).
+
+For the callback URL, run `buddy login --test` to start the callback server and verify it works:
+
+```bash
+buddy login --test
+# Outputs: http://127.0.0.1:8085/callback
+# Hit the URL in browser or curl to confirm, then register it in Buddy
+```
+
+#### 2. Configure Credentials & Login
+
+Provide your OAuth client ID and secret via one of:
+
+```bash
+# Option A: Store in config (recommended)
+buddy config:set client_id <your-client-id>
+buddy config:set client_secret <your-client-secret>
+
+# Option B: Environment variables
+export BUDDY_CLIENT_ID=<your-client-id>
+export BUDDY_CLIENT_SECRET=<your-client-secret>
+```
+Then login:
+
 ```bash
 buddy login
 ```
 
-This opens your browser to authenticate with Buddy and automatically saves your token.
+Or pass directly to login command:
 
-**Setup:** Create an OAuth application at [buddy.works/api/apps](https://app.buddy.works/api/apps) with callback URL `http://127.0.0.1:8085/callback`.
+```bash
+buddy login --client-id=<id> --client-secret=<secret>
+```
+
+This opens your browser to authenticate with Buddy and saves your token automatically.
 
 ## Configuration
 
