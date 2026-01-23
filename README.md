@@ -206,19 +206,34 @@ All commands support:
 
 ## Claude Code Plugin
 
-This repository includes a Claude Code plugin for AI-assisted CI/CD management.
+This repository includes a Claude Code plugin for AI-assisted CI/CD management. Control deployments and debug pipelines using natural language.
+
+### Quick Example
+
+```
+You: "Deploy to production and wait for it to finish"
+You: "Why did my last build fail?"
+You: "Show me what's currently running"
+```
 
 ### Installation
 
-```bash
-claude --plugin-dir /path/to/buddy-cli/claude-plugin
+In Claude Code:
+```
+/plugin marketplace add jtsternberg/buddy-cli
+/plugin install buddy-cli
 ```
 
+Or point to your existing copy of the buddy-cli repository:
+```
+/plugin marketplace add ./buddy-cli
+/plugin install buddy-cli
+```
 ### Features
 
-- **Skills**: Auto-invoked guidance for pipeline management and troubleshooting
+- **Skills**: Auto-invoked when discussing pipelines, deployments, or build failures
 - **Commands**: `/buddy-cli:deploy`, `/buddy-cli:status`, `/buddy-cli:logs`
-- **Agent**: CI/CD specialist for autonomous pipeline operations
+- **Agent**: CI/CD specialist for complex multi-step workflows
 
 See `claude-plugin/.claude-plugin/README.md` for full documentation.
 

@@ -1,124 +1,214 @@
 # buddy-cli Claude Plugin
 
-Claude Code plugin for Buddy.works CI/CD pipeline management.
+Claude Code plugin for Buddy.works CI/CD pipeline management. Enables natural language control of deployments, execution monitoring, and pipeline troubleshooting.
 
-> **Note:** This plugin executes buddy-cli commands that can trigger deployments, modify pipelines, and interact with your Buddy.works account. Review commands before execution.
+> **Warning:** This plugin executes commands that can trigger deployments, cancel executions, and modify pipelines on your Buddy.works account. Review commands before confirming execution.
 
 ## Installation
 
-### Local Development
+### Option 1: From GitHub (Recommended)
+
+```
+/plugin marketplace add jtsternberg/buddy-cli
+/plugin install buddy-cli
+```
+
+### Option 2: From Local Path
+
+If you already have buddy-cli locally (via composer or git clone), point to it:
+
+```
+# From composer install:
+/plugin marketplace add ./vendor/jtsternberg/buddy-cli
+
+# From existing git clone:
+/plugin marketplace add /path/to/buddy-cli
+
+# Then install:
+/plugin install buddy-cli
+```
+
+### Option 3: Clone for Development
+
+For plugin development or contributing:
 
 ```bash
-claude --plugin-dir /path/to/buddy-cli/claude-plugin
+git clone https://github.com/jtsternberg/buddy-cli
 ```
 
-### Project Settings
-
-Add to `.claude/settings.json`:
-
-```json
-{
-  "plugins": ["/path/to/buddy-cli/claude-plugin"]
-}
 ```
+/plugin marketplace add ./buddy-cli
+/plugin install buddy-cli
+```
+
+### Restart Claude Code
+
+After installation, restart Claude Code to activate the plugin.
 
 ## Prerequisites
 
-The plugin requires buddy-cli to be installed and configured:
+The plugin requires buddy-cli to be installed and authenticated:
 
 ```bash
 # Install buddy-cli
 composer require jtsternberg/buddy-cli --dev
 
-# Configure authentication
+# Authenticate (choose one)
 export BUDDY_TOKEN=<your-token>
-# Or: buddy config:set token <your-token>
+buddy config:set token <your-token>
 
-# Set workspace and project
-export BUDDY_WORKSPACE=<workspace>
-export BUDDY_PROJECT=<project>
+# Set workspace and project context
+export BUDDY_WORKSPACE=<workspace-name>
+export BUDDY_PROJECT=<project-name>
 ```
+
+Get your API token from [Buddy.works App Tokens](https://app.buddy.works/api-tokens).
+
+## Quick Start
+
+```
+You: "What pipelines are available?"
+You: "Run the deploy pipeline"
+You: "Why did my last build fail?"
+You: "Show me the execution logs"
+```
+
+The plugin's skills automatically activate when discussing CI/CD topics.
 
 ## Features
 
 ### Skills (Auto-Invoked)
 
-**using-buddy-cli** - Automatically invoked when discussing:
-- Pipeline deployments
-- Execution status
-- buddy-cli commands
+Skills load automatically based on conversation context.
 
-**troubleshooting-pipelines** - Automatically invoked when:
-- Builds fail
-- Executions error
-- Debugging deployments
+**using-buddy-cli** - Activates when you mention:
+- Running or listing pipelines
+- Checking execution status
+- Configuring buddy-cli settings
+
+Example prompts:
+- "List all pipelines in this project"
+- "Run the staging deployment"
+- "What's the status of the last execution?"
+
+**troubleshooting-pipelines** - Activates when you mention:
+- Build failures or errors
+- Stuck or failed deployments
+- Debugging CI/CD issues
+
+Example prompts:
+- "Why did my build fail?"
+- "The deploy is stuck, help me debug"
+- "Show me the error logs from the last run"
 
 ### Commands (User-Invoked)
 
-| Command | Description |
-|---------|-------------|
-| `/buddy-cli:deploy` | Run a pipeline deployment |
-| `/buddy-cli:status` | Show execution status |
-| `/buddy-cli:logs` | View execution logs |
+Invoke directly with `/buddy-cli:<command>`:
 
-### Agents
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/buddy-cli:deploy` | Run a pipeline | `/buddy-cli:deploy production` |
+| `/buddy-cli:status` | Show execution status | `/buddy-cli:status --latest` |
+| `/buddy-cli:logs` | View execution logs | `/buddy-cli:logs --errors-only` |
 
-**cicd-specialist** - Specialized agent for:
-- CI/CD workflow automation
-- Pipeline troubleshooting
-- Log analysis
+### Agent
 
-## Usage Examples
+**cicd-specialist** - Autonomous agent for complex CI/CD tasks:
+- Multi-step deployment workflows
+- Cross-pipeline coordination
+- Detailed log analysis and error diagnosis
 
-### Run a deployment
+## Workflow Examples
+
+### Deploy to Production
+
 ```
-/buddy-cli:deploy production --wait
+You: "Deploy the main branch to production"
+Claude: I'll run the production pipeline for you.
+        [Executes: buddy pipelines:run production --branch main]
+        Pipeline started. Execution ID: 12345
+
+You: "Wait for it to finish and show me the result"
+Claude: [Monitors execution status]
+        Execution completed successfully in 3m 42s.
 ```
 
-### Check status
+### Debug a Failed Build
+
 ```
-/buddy-cli:status
+You: "My build failed, what happened?"
+Claude: Let me check the recent executions.
+        [Executes: buddy executions:list --failed]
+
+        Found failed execution #5678 from 10 minutes ago.
+        [Executes: buddy executions:show 5678 --logs]
+
+        The build failed due to a test failure in UserServiceTest.
+        Error: "Expected 200 but got 401" on line 45.
+
+        This looks like an authentication issue in your test setup.
 ```
 
-### View failure logs
-```
-/buddy-cli:logs --errors-only
-```
+### Monitor Deployment Status
 
-### Natural language (skills auto-invoke)
-- "Deploy to production"
-- "Why did my build fail?"
-- "Show me the pipeline status"
+```
+You: "Is anything running right now?"
+Claude: [Executes: buddy executions:list --status=running]
+
+        Yes, there's one active execution:
+        - Pipeline: deploy-staging
+        - Started: 2 minutes ago
+        - Current action: Running tests (3/5 complete)
+```
 
 ## Configuration
 
-The plugin uses buddy-cli's configuration. Set via:
+The plugin uses buddy-cli's configuration system:
 
-1. Environment variables: `BUDDY_TOKEN`, `BUDDY_WORKSPACE`, `BUDDY_PROJECT`
-2. Config command: `buddy config:set <key> <value>`
-3. Project file: `.buddy-cli.json`
+| Method | Example |
+|--------|---------|
+| Environment variables | `export BUDDY_TOKEN=xxx` |
+| Config command | `buddy config:set token xxx` |
+| Project file | `.buddy-cli.json` in project root |
+
+Required settings:
+- `token` - Buddy.works API token
+- `workspace` - Workspace name (or `BUDDY_WORKSPACE`)
+- `project` - Project name (or `BUDDY_PROJECT`)
 
 ## Testing
 
 ### Verify Plugin Loads
 
-```bash
-claude --plugin-dir /path/to/buddy-cli/claude-plugin --print-plugins
+After installation, check that the plugin is loaded:
 ```
-
-### Test Commands
-
-```bash
-claude --plugin-dir /path/to/buddy-cli/claude-plugin
-> /buddy-cli:status
+/plugin list
 ```
 
 ### Test Skills
 
-Ask Claude about deployments or pipeline failures - the skills should auto-invoke.
+Ask Claude about deployments or pipelines - skills should auto-invoke:
+- "What pipelines do I have?"
+- "Show me recent builds"
 
-### Troubleshooting
+### Test Commands
 
-- **Plugin not loading**: Check plugin.json is valid JSON
-- **Commands not found**: Ensure commands/ directory has .md files
-- **Skills not invoking**: Check skill description matches use case
+```
+/buddy-cli:status
+```
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Plugin not loading | Verify plugin.json is valid JSON |
+| Commands not found | Check commands/ directory has .md files |
+| Skills not invoking | Ensure conversation mentions CI/CD topics |
+| Authentication errors | Run `buddy config:show` to verify token |
+| Wrong project | Set `BUDDY_WORKSPACE` and `BUDDY_PROJECT` |
+
+## Resources
+
+- [buddy-cli Documentation](https://github.com/jtsternberg/buddy-cli)
+- [Buddy.works API](https://buddy.works/docs/api)
+- [Claude Code Plugins](https://docs.anthropic.com/en/docs/claude-code)
