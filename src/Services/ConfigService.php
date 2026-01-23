@@ -84,7 +84,7 @@ class ConfigService
             return null;
         }
 
-        return $home . '/.buddy-cli.json';
+        return $home . '/.config/buddy-cli/config.json';
     }
 
     private function getProjectConfigPath(): ?string
@@ -127,6 +127,11 @@ class ConfigService
     {
         if ($this->userConfigPath === null) {
             return;
+        }
+
+        $dir = dirname($this->userConfigPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
         }
 
         $json = json_encode($this->config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

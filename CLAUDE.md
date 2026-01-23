@@ -57,7 +57,7 @@ src/
 1. Command-line flags (`--workspace`, `--project`)
 2. Environment variables (`BUDDY_TOKEN`, `BUDDY_WORKSPACE`, `BUDDY_PROJECT`)
 3. Project config (`.buddy-cli.json`)
-4. User config (`~/.buddy-cli.json`)
+4. User config (`~/.config/buddy-cli/config.json`)
 
 ## Output Conventions
 

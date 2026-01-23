@@ -48,7 +48,7 @@ BUDDY_PROJECT=<project-name>
 
 ### Config Files
 
-- User config: `~/.buddy-cli.json`
+- User config: `~/.config/buddy-cli/config.json`
 - Project config: `.buddy-cli.json` (in project root)
 
 ```json
@@ -63,7 +63,7 @@ BUDDY_PROJECT=<project-name>
 1. Command-line flags (`--workspace`, `--project`)
 2. Environment variables
 3. Project config (`.buddy-cli.json`)
-4. User config (`~/.buddy-cli.json`)
+4. User config (`~/.config/buddy-cli/config.json`)
 
 ## Commands
 
