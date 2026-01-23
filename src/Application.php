@@ -76,48 +76,48 @@ class Application extends ConsoleApplication
     private function registerCommands(): void
     {
         // Auth commands
-        $this->add(new LoginCommand($this));
-        $this->add(new LogoutCommand($this));
+        $this->addCommand(new LoginCommand($this));
+        $this->addCommand(new LogoutCommand($this));
 
         // Config commands
-        $this->add(new ConfigShowCommand($this));
-        $this->add(new ConfigSetCommand($this));
-        $this->add(new ConfigClearCommand($this));
-        $this->add(new ConfigValidateCommand($this));
+        $this->addCommand(new ConfigShowCommand($this));
+        $this->addCommand(new ConfigSetCommand($this));
+        $this->addCommand(new ConfigClearCommand($this));
+        $this->addCommand(new ConfigValidateCommand($this));
 
         // Project commands
-        $this->add(new ProjectsListCommand($this));
-        $this->add(new ProjectsShowCommand($this));
+        $this->addCommand(new ProjectsListCommand($this));
+        $this->addCommand(new ProjectsShowCommand($this));
 
         // Pipeline commands
-        $this->add(new PipelinesListCommand($this));
-        $this->add(new PipelinesShowCommand($this));
-        $this->add(new RunCommand($this));
-        $this->add(new RetryCommand($this));
-        $this->add(new CancelCommand($this));
-        $this->add(new GetCommand($this));
-        $this->add(new CreateCommand($this));
-        $this->add(new UpdateCommand($this));
+        $this->addCommand(new PipelinesListCommand($this));
+        $this->addCommand(new PipelinesShowCommand($this));
+        $this->addCommand(new RunCommand($this));
+        $this->addCommand(new RetryCommand($this));
+        $this->addCommand(new CancelCommand($this));
+        $this->addCommand(new GetCommand($this));
+        $this->addCommand(new CreateCommand($this));
+        $this->addCommand(new UpdateCommand($this));
 
         // Execution commands
-        $this->add(new ExecutionsListCommand($this));
-        $this->add(new ExecutionsShowCommand($this));
-        $this->add(new FailedCommand($this));
+        $this->addCommand(new ExecutionsListCommand($this));
+        $this->addCommand(new ExecutionsShowCommand($this));
+        $this->addCommand(new FailedCommand($this));
 
         // Action commands
-        $this->add(new ActionsListCommand($this));
-        $this->add(new ActionsShowCommand($this));
-        $this->add(new ActionsCreateCommand($this));
-        $this->add(new ActionsUpdateCommand($this));
-        $this->add(new ActionsDeleteCommand($this));
+        $this->addCommand(new ActionsListCommand($this));
+        $this->addCommand(new ActionsShowCommand($this));
+        $this->addCommand(new ActionsCreateCommand($this));
+        $this->addCommand(new ActionsUpdateCommand($this));
+        $this->addCommand(new ActionsDeleteCommand($this));
 
         // Variable commands
-        $this->add(new VariablesListCommand($this));
-        $this->add(new VariablesShowCommand($this));
-        $this->add(new VariablesSetCommand($this));
-        $this->add(new VariablesDeleteCommand($this));
+        $this->addCommand(new VariablesListCommand($this));
+        $this->addCommand(new VariablesShowCommand($this));
+        $this->addCommand(new VariablesSetCommand($this));
+        $this->addCommand(new VariablesDeleteCommand($this));
 
         // Self commands
-        $this->add(new SelfInstallCommand($this));
+        $this->addCommand(new SelfInstallCommand($this));
     }
 }
