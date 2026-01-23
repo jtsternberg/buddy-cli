@@ -99,6 +99,20 @@ buddy projects:list                       # List projects in workspace
 buddy projects:show <name>                # Show project details
 ```
 
+### Variables
+
+```bash
+buddy vars:list                           # List environment variables
+buddy vars:list --project=<name>          # Filter by project
+buddy vars:list --pipeline=<id>           # Filter by pipeline
+buddy vars:show <id>                      # Show variable details
+buddy vars:set <key> <value>              # Create or update variable
+buddy vars:set <key> <value> -p <project> # Scope to project
+buddy vars:set <key> <value> --encrypted  # Encrypt the value
+buddy vars:delete <id>                    # Delete variable (with confirmation)
+buddy vars:delete <id> --force            # Delete without confirmation
+```
+
 ### Configuration
 
 ```bash

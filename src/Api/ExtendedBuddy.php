@@ -13,6 +13,7 @@ use Buddy\BuddyClient;
 class ExtendedBuddy extends Buddy
 {
     private ExtendedExecutions $extendedExecutions;
+    private VariablesApi $variables;
 
     /**
      * @param mixed[] $config
@@ -28,10 +29,16 @@ class ExtendedBuddy extends Buddy
         $client = $clientProperty->getValue($this);
 
         $this->extendedExecutions = new ExtendedExecutions($client, $config);
+        $this->variables = new VariablesApi($client, $config);
     }
 
     public function getApiExecutions(): ExtendedExecutions
     {
         return $this->extendedExecutions;
+    }
+
+    public function getApiVariables(): VariablesApi
+    {
+        return $this->variables;
     }
 }

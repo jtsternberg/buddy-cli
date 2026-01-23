@@ -11,6 +11,10 @@ class OAuthService
     private const AUTHORIZE_URL = 'https://api.buddy.works/oauth2/authorize';
     private const TOKEN_URL = 'https://api.buddy.works/oauth2/token';
 
+    public const SCOPE_VARIABLE_INFO = 'VARIABLE_INFO';
+    public const SCOPE_VARIABLE_ADD = 'VARIABLE_ADD';
+    public const SCOPE_VARIABLE_MANAGE = 'VARIABLE_MANAGE';
+
     private string $clientId;
     private string $clientSecret;
 
@@ -27,6 +31,9 @@ class OAuthService
             BuddyOAuth::SCOPE_EXECUTION_INFO,
             BuddyOAuth::SCOPE_EXECUTION_RUN,
             BuddyOAuth::SCOPE_USER_INFO,
+            self::SCOPE_VARIABLE_INFO,
+            self::SCOPE_VARIABLE_ADD,
+            self::SCOPE_VARIABLE_MANAGE,
         ];
     }
 
