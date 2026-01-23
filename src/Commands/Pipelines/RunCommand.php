@@ -24,6 +24,7 @@ class RunCommand extends BaseCommand
             ->addOption('revision', 'r', InputOption::VALUE_REQUIRED, 'Git revision (commit SHA)')
             ->addOption('tag', 't', InputOption::VALUE_REQUIRED, 'Tag name')
             ->addOption('comment', 'c', InputOption::VALUE_REQUIRED, 'Execution comment')
+            ->addOption('var', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Set variable (KEY=value)')
             ->addOption('wait', null, InputOption::VALUE_NONE, 'Wait for execution to complete')
             ->setHelp(<<<'HELP'
 Triggers a new execution of the specified pipeline.
@@ -36,12 +37,14 @@ Options:
   -r, --revision   Specific commit SHA to run
   -t, --tag        Tag name to run against
   -c, --comment    Comment to attach to this execution
+      --var        Set a pipeline variable (can be used multiple times)
       --wait       Wait for execution to complete before returning
 
 Examples:
   buddy pipelines:run 12345 --project=my-project
   buddy pipelines:run 12345 --branch=feature/new-feature
   buddy pipelines:run 12345 --revision=abc123 --comment="Hotfix deploy"
+  buddy pipelines:run 12345 --var="VERSION=1.0" --var="DEBUG=true"
   buddy pipelines:run 12345 --wait
 HELP);
 
@@ -68,6 +71,24 @@ HELP);
         }
         if ($comment = $input->getOption('comment')) {
             $data['comment'] = $comment;
+        }
+
+        // Parse --var options into variables array
+        $vars = $input->getOption('var');
+        if (!empty($vars)) {
+            $variables = [];
+            foreach ($vars as $var) {
+                $parts = explode('=', $var, 2);
+                if (count($parts) === 2) {
+                    $variables[] = [
+                        'key' => $parts[0],
+                        'value' => $parts[1],
+                    ];
+                }
+            }
+            if (!empty($variables)) {
+                $data['variables'] = $variables;
+            }
         }
 
         // Check if pipeline uses wildcards and requires branch/tag/revision
