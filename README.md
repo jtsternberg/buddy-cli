@@ -11,11 +11,64 @@ Works great with LLM assistants for iterative debugging workflows. See [Debuggin
 
 ## Installation
 
+### As a Project Dependency
+
 ```bash
 composer require jtsternberg/buddy-cli --dev
 ```
 
-After installation, the `buddy` command is available via `vendor/bin/buddy`.
+The `buddy` command is available via `vendor/bin/buddy`.
+
+### Global Installation
+
+```bash
+composer global require jtsternberg/buddy-cli
+```
+
+Ensure `~/.composer/vendor/bin` is in your PATH, then run `buddy` from anywhere.
+
+### From Source
+
+```bash
+git clone https://github.com/jtsternberg/buddy-cli.git
+cd buddy-cli
+composer install
+./bin/buddy self:install
+```
+
+This creates a symlink in `~/.local/bin/buddy` (or similar) for pathless execution.
+
+## Shell Completion
+
+Enable tab-completion for commands, options, and arguments. Supports bash, zsh, and fish.
+
+### Bash (`~/.bashrc`):
+
+```bash
+# buddy-cli completions
+eval "$(buddy completion bash)"
+```
+
+### Zsh (`~/.zshrc`):
+
+First generate the completion file:
+```bash
+mkdir -p ~/.buddy-cli/completions
+buddy completion zsh > ~/.buddy-cli/completions/_buddy
+```
+
+Then add to `~/.zshrc` (before `compinit` if you call it manually):
+```bash
+# buddy-cli completions
+fpath=(~/.buddy-cli/completions $fpath)
+```
+
+### Fish (`~/.config/fish/config.fish`):
+
+```bash
+# buddy-cli completions
+buddy completion fish | source
+```
 
 ## Authentication
 
