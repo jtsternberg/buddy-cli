@@ -157,8 +157,8 @@ HELP);
             return;
         }
 
-        $failed = array_filter($actions, fn($a) => ($a['status'] ?? '') === 'FAILED');
-        $successful = array_filter($actions, fn($a) => ($a['status'] ?? '') === 'SUCCESSFUL');
+        $failed = array_filter($actions, fn ($a) => ($a['status'] ?? '') === 'FAILED');
+        $successful = array_filter($actions, fn ($a) => ($a['status'] ?? '') === 'SUCCESSFUL');
 
         $total = count($actions);
         $passedCount = count($successful);

@@ -11,7 +11,6 @@ use BuddyCli\Tests\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
  * Concrete implementation for testing the abstract BaseCommand.

@@ -26,14 +26,14 @@ class BuddyService
     public function getWorkspaces(): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiWorkspaces()->getWorkspaces()->getBody()
+            fn () => $this->buddy->getApiWorkspaces()->getWorkspaces()->getBody()
         );
     }
 
     public function getWorkspace(string $domain): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiWorkspaces()->getWorkspace($domain)->getBody()
+            fn () => $this->buddy->getApiWorkspaces()->getWorkspace($domain)->getBody()
         );
     }
 
@@ -42,14 +42,14 @@ class BuddyService
     public function getProjects(string $workspace): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiProjects()->getProjects($workspace)->getBody()
+            fn () => $this->buddy->getApiProjects()->getProjects($workspace)->getBody()
         );
     }
 
     public function getProject(string $workspace, string $projectName): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiProjects()->getProject($workspace, $projectName)->getBody()
+            fn () => $this->buddy->getApiProjects()->getProject($workspace, $projectName)->getBody()
         );
     }
 
@@ -58,63 +58,63 @@ class BuddyService
     public function getPipelines(string $workspace, string $projectName): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->getPipelines($workspace, $projectName)->getBody()
+            fn () => $this->buddy->getApiPipelines()->getPipelines($workspace, $projectName)->getBody()
         );
     }
 
     public function getPipeline(string $workspace, string $projectName, int $pipelineId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->getPipeline($workspace, $projectName, $pipelineId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->getPipeline($workspace, $projectName, $pipelineId)->getBody()
         );
     }
 
     public function getPipelineActions(string $workspace, string $projectName, int $pipelineId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->getPipelineActions($workspace, $projectName, $pipelineId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->getPipelineActions($workspace, $projectName, $pipelineId)->getBody()
         );
     }
 
     public function createPipeline(string $workspace, string $projectName, array $data): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->addPipeline($data, $workspace, $projectName)->getBody()
+            fn () => $this->buddy->getApiPipelines()->addPipeline($data, $workspace, $projectName)->getBody()
         );
     }
 
     public function updatePipeline(string $workspace, string $projectName, int $pipelineId, array $data): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->editPipeline($data, $workspace, $projectName, $pipelineId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->editPipeline($data, $workspace, $projectName, $pipelineId)->getBody()
         );
     }
 
     public function createPipelineAction(string $workspace, string $projectName, int $pipelineId, array $data): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->addPipelineAction($data, $workspace, $projectName, $pipelineId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->addPipelineAction($data, $workspace, $projectName, $pipelineId)->getBody()
         );
     }
 
     public function getPipelineAction(string $workspace, string $projectName, int $pipelineId, int $actionId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->getPipelineAction($workspace, $projectName, $pipelineId, $actionId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->getPipelineAction($workspace, $projectName, $pipelineId, $actionId)->getBody()
         );
     }
 
     public function updatePipelineAction(string $workspace, string $projectName, int $pipelineId, int $actionId, array $data): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->editPipelineAction($data, $workspace, $projectName, $pipelineId, $actionId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->editPipelineAction($data, $workspace, $projectName, $pipelineId, $actionId)->getBody()
         );
     }
 
     public function deletePipelineAction(string $workspace, string $projectName, int $pipelineId, int $actionId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiPipelines()->deletePipelineAction($workspace, $projectName, $pipelineId, $actionId)->getBody()
+            fn () => $this->buddy->getApiPipelines()->deletePipelineAction($workspace, $projectName, $pipelineId, $actionId)->getBody()
         );
     }
 
@@ -123,42 +123,42 @@ class BuddyService
     public function getExecutions(string $workspace, string $projectName, int $pipelineId, array $filters = []): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiExecutions()->getExecutions($workspace, $projectName, $pipelineId, $filters)->getBody()
+            fn () => $this->buddy->getApiExecutions()->getExecutions($workspace, $projectName, $pipelineId, $filters)->getBody()
         );
     }
 
     public function getExecution(string $workspace, string $projectName, int $pipelineId, int $executionId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiExecutions()->getExecution($workspace, $projectName, $pipelineId, $executionId)->getBody()
+            fn () => $this->buddy->getApiExecutions()->getExecution($workspace, $projectName, $pipelineId, $executionId)->getBody()
         );
     }
 
     public function runExecution(string $workspace, string $projectName, int $pipelineId, array $data = []): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiExecutions()->runExecution($data, $workspace, $projectName, $pipelineId)->getBody()
+            fn () => $this->buddy->getApiExecutions()->runExecution($data, $workspace, $projectName, $pipelineId)->getBody()
         );
     }
 
     public function retryExecution(string $workspace, string $projectName, int $pipelineId, int $executionId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiExecutions()->retryRelease($workspace, $projectName, $pipelineId, $executionId)->getBody()
+            fn () => $this->buddy->getApiExecutions()->retryRelease($workspace, $projectName, $pipelineId, $executionId)->getBody()
         );
     }
 
     public function cancelExecution(string $workspace, string $projectName, int $pipelineId, int $executionId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiExecutions()->cancelExecution($workspace, $projectName, $pipelineId, $executionId)->getBody()
+            fn () => $this->buddy->getApiExecutions()->cancelExecution($workspace, $projectName, $pipelineId, $executionId)->getBody()
         );
     }
 
     public function getActionExecution(string $workspace, string $projectName, int $pipelineId, int $executionId, int $actionId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiExecutions()->getActionExecution($workspace, $projectName, $pipelineId, $executionId, $actionId)->getBody()
+            fn () => $this->buddy->getApiExecutions()->getActionExecution($workspace, $projectName, $pipelineId, $executionId, $actionId)->getBody()
         );
     }
 
@@ -170,14 +170,14 @@ class BuddyService
     public function getVariables(string $workspace, array $filters = []): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiVariables()->getVariables($workspace, $filters)->getBody()
+            fn () => $this->buddy->getApiVariables()->getVariables($workspace, $filters)->getBody()
         );
     }
 
     public function getVariable(string $workspace, int $variableId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiVariables()->getVariable($workspace, $variableId)->getBody()
+            fn () => $this->buddy->getApiVariables()->getVariable($workspace, $variableId)->getBody()
         );
     }
 
@@ -187,7 +187,7 @@ class BuddyService
     public function createVariable(string $workspace, array $data): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiVariables()->addVariable($data, $workspace)->getBody()
+            fn () => $this->buddy->getApiVariables()->addVariable($data, $workspace)->getBody()
         );
     }
 
@@ -197,14 +197,14 @@ class BuddyService
     public function updateVariable(string $workspace, int $variableId, array $data): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiVariables()->editVariable($data, $workspace, $variableId)->getBody()
+            fn () => $this->buddy->getApiVariables()->editVariable($data, $workspace, $variableId)->getBody()
         );
     }
 
     public function deleteVariable(string $workspace, int $variableId): array
     {
         return $this->withAutoRefresh(
-            fn() => $this->buddy->getApiVariables()->deleteVariable($workspace, $variableId)->getBody()
+            fn () => $this->buddy->getApiVariables()->deleteVariable($workspace, $variableId)->getBody()
         );
     }
 

@@ -82,20 +82,20 @@ HELP);
         ];
 
         if (!empty($pipeline['variables'])) {
-            $config['variables'] = array_map(fn($v) => array_filter([
+            $config['variables'] = array_map(fn ($v) => array_filter([
                 'key' => $v['key'],
                 'value' => $v['value'] ?? '',
                 'type' => $v['type'] ?? 'VAR',
                 'settable' => $v['settable'] ?? false,
                 'description' => $v['description'] ?? null,
-            ], fn($val) => $val !== null), $pipeline['variables']);
+            ], fn ($val) => $val !== null), $pipeline['variables']);
         }
 
         if (!empty($actions)) {
-            $config['actions'] = array_map(fn($a) => $this->buildActionConfig($a), $actions);
+            $config['actions'] = array_map(fn ($a) => $this->buildActionConfig($a), $actions);
         }
 
-        return array_filter($config, fn($v) => $v !== null && $v !== []);
+        return array_filter($config, fn ($v) => $v !== null && $v !== []);
     }
 
     private function buildActionConfig(array $action): array
@@ -123,6 +123,6 @@ HELP);
             $config['working_directory'] = $action['working_directory'];
         }
 
-        return array_filter($config, fn($v) => $v !== null);
+        return array_filter($config, fn ($v) => $v !== null);
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace BuddyCli\Commands\Auth;
 
 use BuddyCli\Application;
-use BuddyCli\Services\ConfigService;
 use BuddyCli\Services\OAuthService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

@@ -112,6 +112,6 @@ class ShowCommand extends BaseCommand
             $config['working_directory'] = $action['working_directory'];
         }
 
-        return array_filter($config, fn($v) => $v !== null);
+        return array_filter($config, fn ($v) => $v !== null);
     }
 }

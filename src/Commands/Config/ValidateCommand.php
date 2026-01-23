@@ -113,8 +113,8 @@ HELP);
         if ($this->isJsonOutput($input)) {
             $this->outputJson($output, [
                 'valid' => empty($errors),
-                'errors' => array_map(fn($e) => $e['message'], $errors),
-                'warnings' => array_map(fn($w) => $w['message'], $warnings),
+                'errors' => array_map(fn ($e) => $e['message'], $errors),
+                'warnings' => array_map(fn ($w) => $w['message'], $warnings),
             ]);
             return empty($errors) ? self::SUCCESS : self::FAILURE;
         }

@@ -53,14 +53,14 @@ HELP);
             // Filter to only failed actions
             $failedActions = array_filter(
                 $execution['action_executions'] ?? [],
-                fn($a) => ($a['status'] ?? '') === 'FAILED'
+                fn ($a) => ($a['status'] ?? '') === 'FAILED'
             );
             $this->outputJson($output, array_values($failedActions));
             return self::SUCCESS;
         }
 
         $actionExecutions = $execution['action_executions'] ?? [];
-        $failedActions = array_filter($actionExecutions, fn($a) => ($a['status'] ?? '') === 'FAILED');
+        $failedActions = array_filter($actionExecutions, fn ($a) => ($a['status'] ?? '') === 'FAILED');
 
         if (empty($failedActions)) {
             $output->writeln('<comment>No failed actions in this execution.</comment>');

@@ -71,7 +71,7 @@ class ExecutionsCommandsTest extends TestCase
     public function testExecutionsListWithExecutions(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, $this->callback(fn($f) => $f['per_page'] === 10))
+            ->with('ws', 'proj', 1, $this->callback(fn ($f) => $f['per_page'] === 10))
             ->willReturn([
                 'executions' => [
                     [
@@ -126,7 +126,7 @@ class ExecutionsCommandsTest extends TestCase
     public function testExecutionsListWithStatusFilter(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, $this->callback(fn($f) => $f['status'] === 'FAILED'))
+            ->with('ws', 'proj', 1, $this->callback(fn ($f) => $f['status'] === 'FAILED'))
             ->willReturn(['executions' => []]);
 
         $command = $this->app->find('executions:list');

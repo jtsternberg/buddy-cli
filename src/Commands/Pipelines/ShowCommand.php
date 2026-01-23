@@ -142,7 +142,7 @@ HELP);
         ];
 
         if (!empty($pipeline['variables'])) {
-            $config['variables'] = array_map(fn($v) => [
+            $config['variables'] = array_map(fn ($v) => [
                 'key' => $v['key'],
                 'value' => $v['value'] ?? '',
                 'type' => $v['type'] ?? 'VAR',
@@ -152,10 +152,10 @@ HELP);
         }
 
         if (!empty($actions)) {
-            $config['actions'] = array_map(fn($a) => $this->buildActionConfig($a), $actions);
+            $config['actions'] = array_map(fn ($a) => $this->buildActionConfig($a), $actions);
         }
 
-        return array_filter($config, fn($v) => $v !== null && $v !== []);
+        return array_filter($config, fn ($v) => $v !== null && $v !== []);
     }
 
     private function buildActionConfig(array $action): array
@@ -187,6 +187,6 @@ HELP);
             $config['trigger_conditions'] = $action['trigger_conditions'];
         }
 
-        return array_filter($config, fn($v) => $v !== null);
+        return array_filter($config, fn ($v) => $v !== null);
     }
 }
