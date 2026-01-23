@@ -4,10 +4,25 @@
 
 set -e
 
+# Detect buddy command location
+if command -v buddy &> /dev/null; then
+    BUDDY_CMD="buddy"
+elif [ -x "./bin/buddy" ]; then
+    BUDDY_CMD="./bin/buddy"
+elif [ -x "./vendor/bin/buddy" ]; then
+    BUDDY_CMD="./vendor/bin/buddy"
+else
+    echo "ERROR: buddy command not found."
+    echo ""
+    echo "Install via composer:"
+    echo "  composer require jtsternberg/buddy-cli --dev"
+    exit 1
+fi
+
 # Check for BUDDY_TOKEN environment variable
 if [ -z "$BUDDY_TOKEN" ]; then
     # Check if token is set via config
-    TOKEN_VIA_CONFIG=$(./bin/buddy config:show 2>/dev/null | grep -c "token:" || true)
+    TOKEN_VIA_CONFIG=$($BUDDY_CMD config:show 2>/dev/null | grep -c "token:" || true)
     if [ "$TOKEN_VIA_CONFIG" -eq 0 ]; then
         echo "ERROR: BUDDY_TOKEN is not set."
         echo ""
@@ -23,7 +38,7 @@ if [ -z "$BUDDY_TOKEN" ]; then
 fi
 
 # Check for workspace configuration
-WORKSPACE=$(./bin/buddy config:show 2>/dev/null | grep "workspace:" | awk '{print $2}' || true)
+WORKSPACE=$($BUDDY_CMD config:show 2>/dev/null | grep "workspace:" | awk '{print $2}' || true)
 if [ -z "$WORKSPACE" ] && [ -z "$BUDDY_WORKSPACE" ]; then
     echo "ERROR: No workspace configured."
     echo ""
@@ -39,7 +54,7 @@ if [ -z "$WORKSPACE" ] && [ -z "$BUDDY_WORKSPACE" ]; then
 fi
 
 # Check for project configuration
-PROJECT=$(./bin/buddy config:show 2>/dev/null | grep "project:" | awk '{print $2}' || true)
+PROJECT=$($BUDDY_CMD config:show 2>/dev/null | grep "project:" | awk '{print $2}' || true)
 if [ -z "$PROJECT" ] && [ -z "$BUDDY_PROJECT" ]; then
     echo "WARNING: No project configured (may be required for some commands)."
     echo ""

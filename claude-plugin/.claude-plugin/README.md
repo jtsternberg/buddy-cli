@@ -2,6 +2,8 @@
 
 Claude Code plugin for Buddy.works CI/CD pipeline management.
 
+> **Note:** This plugin executes buddy-cli commands that can trigger deployments, modify pipelines, and interact with your Buddy.works account. Review commands before execution.
+
 ## Installation
 
 ### Local Development
@@ -30,7 +32,7 @@ composer require jtsternberg/buddy-cli --dev
 
 # Configure authentication
 export BUDDY_TOKEN=<your-token>
-# Or: ./bin/buddy config:set token <your-token>
+# Or: buddy config:set token <your-token>
 
 # Set workspace and project
 export BUDDY_WORKSPACE=<workspace>
