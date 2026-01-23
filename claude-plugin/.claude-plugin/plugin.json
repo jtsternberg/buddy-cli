@@ -9,8 +9,8 @@
   "repository": "https://github.com/jtsternberg/buddy-cli",
   "license": "MIT",
   "keywords": ["ci/cd", "buddy.works", "pipelines", "deployment"],
-  "skills": "./skills/",
-  "commands": "./commands/",
-  "agents": "./agents/",
-  "hooks": "./hooks/hooks.json"
+  "skills": "../skills/",
+  "commands": "../commands/",
+  "agents": "../agents/",
+  "hooks": "../hooks/hooks.json"
 }

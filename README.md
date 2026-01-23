@@ -211,7 +211,7 @@ This repository includes a Claude Code plugin for AI-assisted CI/CD management.
 ### Installation
 
 ```bash
-claude --plugin-dir /path/to/buddy-cli
+claude --plugin-dir /path/to/buddy-cli/claude-plugin
 ```
 
 ### Features
@@ -220,7 +220,7 @@ claude --plugin-dir /path/to/buddy-cli
 - **Commands**: `/buddy-cli:deploy`, `/buddy-cli:status`, `/buddy-cli:logs`
 - **Agent**: CI/CD specialist for autonomous pipeline operations
 
-See `.claude-plugin/README.md` for full documentation.
+See `claude-plugin/.claude-plugin/README.md` for full documentation.
 
 ## License
 

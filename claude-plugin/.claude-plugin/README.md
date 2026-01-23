@@ -7,7 +7,7 @@ Claude Code plugin for Buddy.works CI/CD pipeline management.
 ### Local Development
 
 ```bash
-claude --plugin-dir /path/to/buddy-cli
+claude --plugin-dir /path/to/buddy-cli/claude-plugin
 ```
 
 ### Project Settings
@@ -16,7 +16,7 @@ Add to `.claude/settings.json`:
 
 ```json
 {
-  "plugins": ["/path/to/buddy-cli"]
+  "plugins": ["/path/to/buddy-cli/claude-plugin"]
 }
 ```
 
@@ -101,13 +101,13 @@ The plugin uses buddy-cli's configuration. Set via:
 ### Verify Plugin Loads
 
 ```bash
-claude --plugin-dir /path/to/buddy-cli --print-plugins
+claude --plugin-dir /path/to/buddy-cli/claude-plugin --print-plugins
 ```
 
 ### Test Commands
 
 ```bash
-claude --plugin-dir /path/to/buddy-cli
+claude --plugin-dir /path/to/buddy-cli/claude-plugin
 > /buddy-cli:status
 ```
 
