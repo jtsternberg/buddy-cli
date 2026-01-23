@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PHP CLI tool for Buddy.works CI/CD pipelines, built on `buddy-works/buddy-works-php-api` and `symfony/console`. Package name: `jtsternberg/buddy-cli`.
 
+## Special Instructions
+
+- **Use 'bd' for task tracking**
+
 ## Commands
 
 ```bash
@@ -66,3 +70,29 @@ All commands support `--json` flag. Default is human-readable tables. JSON outpu
 ## Required API Token Scopes
 
 `WORKSPACE`, `EXECUTION_INFO`, `EXECUTION_RUN`
+
+## Landing the Plane (Session Completion)
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd sync
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds

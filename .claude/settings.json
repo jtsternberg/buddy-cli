@@ -4,5 +4,10 @@
       "WebFetch(domain:github.com)",
       "Bash(./bin/buddy:*)"
     ]
-  }
+  },
+  "enabledPlugins": {
+    "beads@beads-marketplace": true
+  },
+  "enabledMcpjsonServers": ["beads"],
+  "enableAllProjectMcpServers": true
 }
