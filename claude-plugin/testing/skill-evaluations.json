@@ -1,0 +1,74 @@
+{
+  "skills": {
+    "using-buddy-cli": {
+      "description": "Tests for the buddy-cli usage skill",
+      "scenarios": [
+        {
+          "prompt": "Run the deploy pipeline",
+          "expected_behavior": "Invoke pipelines:run or pipelines:list to find pipeline, then run it",
+          "expected_commands": ["pipelines:run", "pipelines:list"]
+        },
+        {
+          "prompt": "What pipelines are available?",
+          "expected_behavior": "List all pipelines in the project",
+          "expected_commands": ["pipelines:list"]
+        },
+        {
+          "prompt": "Show me the last execution",
+          "expected_behavior": "List recent executions and show details of the most recent",
+          "expected_commands": ["executions:list", "executions:show"]
+        },
+        {
+          "prompt": "Set up my buddy workspace to use my-workspace",
+          "expected_behavior": "Configure workspace via config:set",
+          "expected_commands": ["config:set"]
+        },
+        {
+          "prompt": "Cancel the running deployment",
+          "expected_behavior": "Find running execution and cancel it",
+          "expected_commands": ["pipelines:cancel", "executions:list"]
+        }
+      ]
+    },
+    "troubleshooting-pipelines": {
+      "description": "Tests for the pipeline troubleshooting skill",
+      "scenarios": [
+        {
+          "prompt": "Why did my build fail?",
+          "expected_behavior": "Check recent executions, find failed one, get logs, analyze errors",
+          "expected_commands": ["executions:list", "executions:failed", "executions:show --logs"]
+        },
+        {
+          "prompt": "The deploy is stuck",
+          "expected_behavior": "Check execution status, identify stuck action",
+          "expected_commands": ["executions:list", "executions:show"]
+        },
+        {
+          "prompt": "Retry the failed pipeline",
+          "expected_behavior": "Identify failed pipeline and retry it",
+          "expected_commands": ["pipelines:retry"]
+        },
+        {
+          "prompt": "Debug the test action that keeps timing out",
+          "expected_behavior": "Get action logs, analyze timeout patterns, suggest fixes",
+          "expected_commands": ["executions:show --logs", "actions:show"]
+        },
+        {
+          "prompt": "Check if authentication is configured correctly",
+          "expected_behavior": "Validate config and test API connectivity",
+          "expected_commands": ["config:show"]
+        }
+      ]
+    }
+  },
+  "evaluation_process": {
+    "baseline": "Test prompts without skills loaded to establish baseline behavior",
+    "with_skills": "Test same prompts with skills loaded",
+    "metrics": [
+      "Correct command selection",
+      "Appropriate use of --json flag for parsing",
+      "Error handling approach",
+      "Completeness of workflow"
+    ]
+  }
+}
