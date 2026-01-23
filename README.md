@@ -92,6 +92,18 @@ buddy executions:show <exec-id> --pipeline=<id> --logs  # Include action logs
 buddy executions:failed <exec-id> --pipeline=<id>  # Show failed action details
 ```
 
+### Actions
+
+```bash
+buddy actions:list --pipeline=<id>                 # List actions in a pipeline
+buddy actions:show <action-id> --pipeline=<id>     # Show action details
+buddy actions:show <action-id> --pipeline=<id> --yaml  # Output as YAML configuration
+buddy actions:create <file> --pipeline=<id>        # Create new action from YAML file
+buddy actions:update <action-id> <file> --pipeline=<id>  # Update action from YAML
+buddy actions:delete <action-id> --pipeline=<id>   # Delete action (with confirmation)
+buddy actions:delete <action-id> --pipeline=<id> --force  # Delete without confirmation
+```
+
 ### Projects
 
 ```bash
