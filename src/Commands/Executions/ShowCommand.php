@@ -20,6 +20,7 @@ class ShowCommand extends BaseCommand
             ->setDescription('Show execution details')
             ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID')
             ->addOption('logs', null, InputOption::VALUE_NONE, 'Show action logs')
+            ->addOption('summary', null, InputOption::VALUE_NONE, 'Show compact status summary')
             ->setHelp(<<<'HELP'
 Displays detailed information about a specific execution.
 
@@ -27,11 +28,13 @@ Shows execution metadata (status, branch, revision, creator, timing) and lists
 all actions with their individual status and duration.
 
 Options:
-      --logs   Include full output logs for each action
+      --logs     Include full output logs for each action
+      --summary  Show compact, readable status summary
 
 Examples:
   buddy executions:show 67890 --pipeline=12345
   buddy executions:show 67890 --pipeline=12345 --logs
+  buddy executions:show 67890 --pipeline=12345 --summary
 HELP);
 
         $this->addWorkspaceOption();
@@ -51,6 +54,11 @@ HELP);
 
         if ($this->isJsonOutput($input)) {
             $this->outputJson($output, $execution);
+            return self::SUCCESS;
+        }
+
+        if ($input->getOption('summary')) {
+            $this->outputSummary($output, $execution);
             return self::SUCCESS;
         }
 
@@ -124,5 +132,73 @@ HELP);
                 // Skip actions where we can't fetch logs
             }
         }
+    }
+
+    private function outputSummary(OutputInterface $output, array $execution): void
+    {
+        $execId = $execution['id'] ?? 'Unknown';
+        $status = $execution['status'] ?? 'UNKNOWN';
+        $branch = $execution['branch']['name'] ?? '-';
+        $revision = substr($execution['to_revision']['revision'] ?? '-', 0, 8);
+        $creator = $execution['creator']['name'] ?? '-';
+        $duration = $this->formatDuration($execution['start_date'] ?? null, $execution['finish_date'] ?? null);
+
+        $output->writeln("Execution #{$execId}");
+        $output->writeln("  Status:   " . $this->statusIndicator($status) . " {$status}");
+        $output->writeln("  Branch:   {$branch}");
+        $output->writeln("  Revision: {$revision}");
+        $output->writeln("  Creator:  {$creator}");
+        $output->writeln("  Duration: {$duration}");
+        $output->writeln('');
+
+        $actions = $execution['action_executions'] ?? [];
+        if (empty($actions)) {
+            $output->writeln('No actions in this execution.');
+            return;
+        }
+
+        $failed = array_filter($actions, fn($a) => ($a['status'] ?? '') === 'FAILED');
+        $successful = array_filter($actions, fn($a) => ($a['status'] ?? '') === 'SUCCESSFUL');
+
+        $total = count($actions);
+        $passedCount = count($successful);
+        $output->writeln("Actions: {$passedCount}/{$total} passed");
+        $output->writeln('');
+
+        foreach ($actions as $action) {
+            $name = $action['action']['name'] ?? 'Unknown';
+            $actionStatus = $action['status'] ?? 'UNKNOWN';
+            $actionDuration = $this->formatDuration($action['start_date'] ?? null, $action['finish_date'] ?? null);
+            $indicator = $this->statusIndicator($actionStatus);
+
+            $line = "  {$indicator} {$name}";
+            if ($actionDuration !== '-') {
+                $line .= " ({$actionDuration})";
+            }
+            $output->writeln($line);
+        }
+
+        if (!empty($failed)) {
+            $output->writeln('');
+            $output->writeln('FAILED ACTIONS:');
+            foreach ($failed as $action) {
+                $name = $action['action']['name'] ?? 'Unknown';
+                $type = $action['action']['type'] ?? '-';
+                $output->writeln("  - {$name} ({$type})");
+            }
+        }
+    }
+
+    private function statusIndicator(string $status): string
+    {
+        return match ($status) {
+            'SUCCESSFUL' => '[OK]',
+            'FAILED' => '[X]',
+            'INPROGRESS' => '[->]',
+            'ENQUEUED' => '[..]',
+            'SKIPPED' => '[--]',
+            'TERMINATED' => '[##]',
+            default => '[?]',
+        };
     }
 }
