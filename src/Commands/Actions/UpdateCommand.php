@@ -18,7 +18,29 @@ class UpdateCommand extends BaseCommand
             ->setName('actions:update')
             ->setDescription('Update existing action from YAML file')
             ->addArgument('action-id', InputArgument::REQUIRED, 'Action ID to update')
-            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path');
+            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path')
+            ->setHelp(<<<'HELP'
+Updates an existing action using fields from a YAML file. Only fields present in the YAML are updated.
+
+Supported YAML fields:
+  name               Action name
+  type               Action type (BUILD, SFTP, etc.)
+  trigger_time       ON_EVERY_EXECUTION, ON_FAILURE, or ON_BACK_TO_SUCCESS
+  docker_image_name  Docker image (for BUILD actions)
+  docker_image_tag   Docker image tag
+  execute_commands   List of commands to execute
+  setup_commands     List of setup commands
+  shell              Shell to use (e.g., BASH, SH)
+  working_directory  Working directory path
+
+Example YAML:
+  name: "Build App"
+  execute_commands:
+    - composer install
+    - phpunit
+
+Tip: Use <info>actions:show --yaml</info> to export current config as a starting point.
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

@@ -17,7 +17,30 @@ class CreateCommand extends BaseCommand
         $this
             ->setName('actions:create')
             ->setDescription('Create new action from YAML file')
-            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path');
+            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path')
+            ->setHelp(<<<'HELP'
+Creates a new action in a pipeline from a YAML file. Requires <info>name</info> and <info>type</info> fields.
+
+Supported YAML fields:
+  name               Action name (required)
+  type               Action type (required): BUILD, SFTP, SSH_COMMAND, SLACK, etc.
+  trigger_time       ON_EVERY_EXECUTION (default), ON_FAILURE, or ON_BACK_TO_SUCCESS
+  docker_image_name  Docker image (for BUILD actions)
+  docker_image_tag   Docker image tag (default: latest)
+  execute_commands   List of commands to execute
+  setup_commands     List of setup commands
+  shell              Shell to use (e.g., BASH, SH)
+  working_directory  Working directory path
+
+Example YAML:
+  name: "Build App"
+  type: BUILD
+  docker_image_name: php
+  docker_image_tag: "8.2"
+  execute_commands:
+    - composer install
+    - phpunit
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
