@@ -239,4 +239,308 @@ class PipelinesCommandsTest extends TestCase
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('400', $tester->getDisplay());
     }
+
+    // pipelines:retry tests
+
+    public function testPipelinesRetryRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['pipeline-id' => '1', '--project' => 'proj']);
+    }
+
+    public function testPipelinesRetryRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['pipeline-id' => '1', '--workspace' => 'ws']);
+    }
+
+    public function testPipelinesRetryNoExecutions(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->willReturn(['executions' => []]);
+
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('No executions found for this pipeline', $tester->getDisplay());
+    }
+
+    public function testPipelinesRetrySuccess(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->willReturn(['executions' => [['id' => 50]]]);
+
+        $this->mockBuddyService->method('retryExecution')
+            ->with('ws', 'proj', 1, 50)
+            ->willReturn([
+                'id' => 51,
+                'status' => 'INPROGRESS',
+            ]);
+
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('51', $output);
+        $this->assertStringContainsString('INPROGRESS', $output);
+    }
+
+    public function testPipelinesRetryJsonOutput(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->willReturn(['executions' => [['id' => 50]]]);
+
+        $execution = ['id' => 51, 'status' => 'INPROGRESS'];
+        $this->mockBuddyService->method('retryExecution')
+            ->with('ws', 'proj', 1, 50)
+            ->willReturn($execution);
+
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--json' => true,
+        ]);
+
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertSame(51, $data['id']);
+        $this->assertSame('INPROGRESS', $data['status']);
+    }
+
+    // pipelines:cancel tests
+
+    public function testPipelinesCancelRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:cancel');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['pipeline-id' => '1', '--project' => 'proj']);
+    }
+
+    public function testPipelinesCancelRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:cancel');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['pipeline-id' => '1', '--workspace' => 'ws']);
+    }
+
+    public function testPipelinesCancelNoRunningExecution(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['status' => 'INPROGRESS', 'per_page' => 1])
+            ->willReturn(['executions' => []]);
+
+        $command = $this->app->find('pipelines:cancel');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('No running execution found', $tester->getDisplay());
+    }
+
+    public function testPipelinesCancelSuccess(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['status' => 'INPROGRESS', 'per_page' => 1])
+            ->willReturn([
+                'executions' => [
+                    ['id' => 100, 'status' => 'INPROGRESS'],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('cancelExecution')
+            ->with('ws', 'proj', 1, 100)
+            ->willReturn([
+                'id' => 100,
+                'status' => 'TERMINATED',
+            ]);
+
+        $command = $this->app->find('pipelines:cancel');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('100', $output);
+        $this->assertStringContainsString('TERMINATED', $output);
+    }
+
+    public function testPipelinesCancelJsonOutput(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['status' => 'INPROGRESS', 'per_page' => 1])
+            ->willReturn([
+                'executions' => [
+                    ['id' => 100, 'status' => 'INPROGRESS'],
+                ],
+            ]);
+
+        $cancelledExecution = ['id' => 100, 'status' => 'TERMINATED'];
+        $this->mockBuddyService->method('cancelExecution')
+            ->with('ws', 'proj', 1, 100)
+            ->willReturn($cancelledExecution);
+
+        $command = $this->app->find('pipelines:cancel');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertSame(100, $data['id']);
+        $this->assertSame('TERMINATED', $data['status']);
+    }
+
+    // pipelines:get tests
+
+    public function testPipelinesGetRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:get');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', 'pipeline-id' => '1']);
+    }
+
+    public function testPipelinesGetRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:get');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', 'pipeline-id' => '1']);
+    }
+
+    public function testPipelinesGetSuccess(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->with('ws', 'proj', 1)
+            ->willReturn(['id' => 1, 'name' => 'Deploy', 'trigger_mode' => 'MANUAL', 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->with('ws', 'proj', 1)
+            ->willReturn(['actions' => [['name' => 'Build', 'type' => 'BUILD', 'docker_image_name' => 'php', 'execute_commands' => ['composer install']]]]);
+
+        $command = $this->app->find('pipelines:get');
+        $tester = new CommandTester($command);
+
+        $originalDir = getcwd();
+        chdir($this->tempDir);
+        try {
+            $tester->execute([
+                '--workspace' => 'ws',
+                '--project' => 'proj',
+                'pipeline-id' => '1',
+            ]);
+        } finally {
+            chdir($originalDir);
+        }
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Saved pipeline config to pipeline-1.yaml', $tester->getDisplay());
+        $this->assertFileExists($this->tempDir . '/pipeline-1.yaml');
+    }
+
+    public function testPipelinesGetCustomOutput(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'name' => 'Deploy', 'trigger_mode' => 'MANUAL', 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->willReturn(['actions' => []]);
+
+        $command = $this->app->find('pipelines:get');
+        $tester = new CommandTester($command);
+
+        $customPath = $this->tempDir . '/custom-output.yaml';
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--output' => $customPath,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString("Saved pipeline config to {$customPath}", $tester->getDisplay());
+        $this->assertFileExists($customPath);
+    }
+
+    public function testPipelinesGetYamlContent(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'name' => 'Deploy', 'trigger_mode' => 'MANUAL', 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->willReturn(['actions' => [['name' => 'Build', 'type' => 'BUILD', 'docker_image_name' => 'php', 'execute_commands' => ['composer install']]]]);
+
+        $command = $this->app->find('pipelines:get');
+        $tester = new CommandTester($command);
+
+        $outputPath = $this->tempDir . '/test-pipeline.yaml';
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--output' => $outputPath,
+        ]);
+
+        $this->assertFileExists($outputPath);
+        $content = file_get_contents($outputPath);
+
+        $this->assertStringContainsString('name: Deploy', $content);
+        $this->assertStringContainsString('trigger_mode: MANUAL', $content);
+        $this->assertStringContainsString('ref_name: refs/heads/main', $content);
+        $this->assertStringContainsString('name: Build', $content);
+        $this->assertStringContainsString('type: BUILD', $content);
+        $this->assertStringContainsString('docker_image_name: php', $content);
+        $this->assertStringContainsString('composer install', $content);
+    }
 }
