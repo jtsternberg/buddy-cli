@@ -18,7 +18,35 @@ class UpdateCommand extends BaseCommand
             ->setName('pipelines:update')
             ->setDescription('Update existing pipeline from YAML file')
             ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID to update')
-            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path');
+            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path')
+            ->setHelp(<<<'HELP'
+Updates an existing pipeline from a YAML file. Only specified fields are updated.
+
+Note: Actions are <comment>not</comment> updated via this command. Use <info>actions:update</info> to modify actions.
+
+Pipeline YAML fields:
+  name                       Pipeline name
+  trigger_mode               MANUAL, ON_EVERY_PUSH, or SCHEDULED
+  ref_name                   Git branch/tag reference (e.g., refs/heads/main)
+  events                     Trigger events for ON_EVERY_PUSH mode
+  priority                   Execution priority (NORMAL, HIGH, LOW)
+  fetch_all_refs             Fetch all git refs
+  always_from_scratch        Clean workspace each run
+  auto_clear_cache           Clear cache automatically
+  no_skip_to_most_recent     Don't skip to latest commit
+  terminate_stale_runs       Cancel older runs when new one starts
+  concurrent_pipeline_runs   Allow concurrent executions
+  fail_on_prepare_env_warning  Fail on environment warnings
+  variables                  Pipeline-level variables
+
+Example YAML:
+  name: "Renamed Pipeline"
+  trigger_mode: ON_EVERY_PUSH
+  ref_name: refs/heads/develop
+
+Example:
+  buddy pipelines:update 12345 pipeline-config.yaml --project=my-project
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

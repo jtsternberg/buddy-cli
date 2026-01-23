@@ -18,7 +18,27 @@ class ListCommand extends BaseCommand
             ->setName('executions:list')
             ->setDescription('List recent executions')
             ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Filter by status (SUCCESSFUL, FAILED, INPROGRESS)')
-            ->addOption('limit', 'l', InputOption::VALUE_REQUIRED, 'Number of executions to show', '10');
+            ->addOption('limit', 'l', InputOption::VALUE_REQUIRED, 'Number of executions to show', '10')
+            ->setHelp(<<<'HELP'
+Lists recent pipeline executions.
+
+Options:
+      --status      Filter by status: SUCCESSFUL, FAILED, INPROGRESS, ENQUEUED
+  -l, --limit       Number of executions to show (default: 10)
+
+Output columns:
+  ID         Execution identifier
+  Status     Current execution status
+  Branch     Git branch the execution ran against
+  Creator    Who triggered the execution
+  Started    Execution start time
+  Duration   How long the execution ran
+
+Examples:
+  buddy executions:list --pipeline=12345
+  buddy executions:list --pipeline=12345 --status=FAILED
+  buddy executions:list --pipeline=12345 --limit=20
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

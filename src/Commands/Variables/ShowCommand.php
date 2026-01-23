@@ -17,7 +17,16 @@ class ShowCommand extends BaseCommand
         $this
             ->setName('vars:show')
             ->setDescription('Show variable details')
-            ->addArgument('variable-id', InputArgument::REQUIRED, 'Variable ID');
+            ->addArgument('variable-id', InputArgument::REQUIRED, 'Variable ID')
+            ->setHelp(<<<'HELP'
+Displays detailed information about a specific environment variable.
+
+Shows ID, key, type, encryption status, settable flag, description, and scope.
+For non-encrypted variables, the value is also displayed.
+
+Example:
+  buddy vars:show 12345
+HELP);
 
         $this->addWorkspaceOption();
         parent::configure();

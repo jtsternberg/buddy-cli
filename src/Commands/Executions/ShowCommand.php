@@ -19,7 +19,20 @@ class ShowCommand extends BaseCommand
             ->setName('executions:show')
             ->setDescription('Show execution details')
             ->addArgument('execution-id', InputArgument::REQUIRED, 'Execution ID')
-            ->addOption('logs', null, InputOption::VALUE_NONE, 'Show action logs');
+            ->addOption('logs', null, InputOption::VALUE_NONE, 'Show action logs')
+            ->setHelp(<<<'HELP'
+Displays detailed information about a specific execution.
+
+Shows execution metadata (status, branch, revision, creator, timing) and lists
+all actions with their individual status and duration.
+
+Options:
+      --logs   Include full output logs for each action
+
+Examples:
+  buddy executions:show 67890 --pipeline=12345
+  buddy executions:show 67890 --pipeline=12345 --logs
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();

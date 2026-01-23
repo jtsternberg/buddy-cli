@@ -16,7 +16,29 @@ class ListCommand extends BaseCommand
     {
         $this
             ->setName('vars:list')
-            ->setDescription('List environment variables');
+            ->setDescription('List environment variables')
+            ->setHelp(<<<'HELP'
+Lists environment variables in the workspace.
+
+Variables can be scoped to workspace, project, pipeline, or action level.
+Use filters to narrow the results.
+
+Options:
+  -p, --project    Filter by project name
+      --pipeline   Filter by pipeline ID
+
+Output columns:
+  ID         Variable identifier
+  Key        Variable name
+  Type       VAR, SSH_KEY, or SSH_PUBLIC_KEY
+  Encrypted  Whether the value is encrypted
+  Scope      workspace, project:name, pipeline:id, or action:id
+
+Examples:
+  buddy vars:list
+  buddy vars:list --project=my-project
+  buddy vars:list --pipeline=12345
+HELP);
 
         $this->addWorkspaceOption();
         $this->addOption('project', 'p', InputOption::VALUE_REQUIRED, 'Filter by project name');

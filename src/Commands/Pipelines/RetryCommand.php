@@ -17,7 +17,16 @@ class RetryCommand extends BaseCommand
         $this
             ->setName('pipelines:retry')
             ->setDescription('Retry the last failed execution')
-            ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID');
+            ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID')
+            ->setHelp(<<<'HELP'
+Retries the most recent execution of the specified pipeline.
+
+Useful for re-running failed builds without manually triggering a new execution.
+The retry uses the same commit and configuration as the original execution.
+
+Example:
+  buddy pipelines:retry 12345 --project=my-project
+HELP);
 
         $this->addWorkspaceOption();
         $this->addProjectOption();
