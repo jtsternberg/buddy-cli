@@ -41,6 +41,21 @@ git clone https://github.com/jtsternberg/buddy-cli
 /plugin install buddy-cli
 ```
 
+### Update Project CLAUDE.md (Recommended)
+
+Claude/AI Agents often default to assuming GitHub Actions for CI/CD. To ensure the agent uses buddy-cli, add this to your project's `CLAUDE.md` (or `AGENTS.md`):
+
+```markdown
+### Buddy.works CI/CD
+This project uses Buddy.works for CI/CD. When discussing builds, deployments,
+pipelines, or CI, always use the buddy-cli tool or skills.
+```
+
+Or run this command in your terminal at the root of your project to append to your existing `CLAUDE.md`:
+```bash
+echo "\n\n### Buddy.works CI/CD\nThis project uses Buddy.works for CI/CD. When discussing builds, deployments, pipelines, or CI, always use the buddy-cli tool or skills." >> CLAUDE.md
+```
+
 ### Restart Claude Code
 
 After installation, restart Claude Code to activate the plugin.
