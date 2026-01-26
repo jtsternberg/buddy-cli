@@ -210,5 +210,6 @@ Ask Claude about deployments or pipelines - skills should auto-invoke:
 ## Resources
 
 - [buddy-cli Documentation](https://github.com/jtsternberg/buddy-cli)
+- [Ask questions in NotebookLM](https://notebooklm.google.com/notebook/c4d8bcb1-2333-490c-9885-667be4d0ef22) - Interactive Q&A
 - [Buddy.works API](https://buddy.works/docs/api)
 - [Claude Code Plugins](https://docs.anthropic.com/en/docs/claude-code)

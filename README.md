@@ -229,6 +229,7 @@ buddy config:validate --test-api          # Also test API connectivity
 
 ## Documentation
 
+- [Ask questions in NotebookLM](https://notebooklm.google.com/notebook/c4d8bcb1-2333-490c-9885-667be4d0ef22) - Interactive Q&A about buddy-cli
 - [Debugging Pipeline Executions](docs/Debugging-Pipeline-Executions.md) - Real-world walkthrough of diagnosing and fixing a failed pipeline run
 
 ## Options
