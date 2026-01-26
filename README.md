@@ -241,7 +241,7 @@ All commands support:
 
 ## Claude Code Plugin
 
-This repository includes a Claude Code plugin for AI-assisted CI/CD management. Control deployments and debug pipelines using natural language.
+This repository includes a [Claude Code plugin](claude-plugin/.claude-plugin/README.md) for AI-assisted CI/CD management. Control deployments and debug pipelines using natural language.
 
 ### Quick Example
 
@@ -270,7 +270,11 @@ Or point to your existing copy of the buddy-cli repository:
 - **Commands**: `/buddy-cli:deploy`, `/buddy-cli:status`, `/buddy-cli:logs`
 - **Agent**: CI/CD specialist for complex multi-step workflows
 
-See `claude-plugin/.claude-plugin/README.md` for full documentation.
+See [claude-plugin/.claude-plugin/README.md](claude-plugin/.claude-plugin/README.md) for full documentation.
+
+## Development
+
+This repository uses [Beads](https://github.com/steveyegge/beads) for issue tracking—an AI-native system that stores issues directly in the repo. See [.beads/README.md](.beads/README.md) for details.
 
 ## License
 
