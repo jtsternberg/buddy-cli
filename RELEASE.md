@@ -1,5 +1,15 @@
 # Release Process
 
+## Quick Start
+
+Use the `/release` command in Claude Code to automate the release process:
+
+```
+/release
+```
+
+The command auto-detects the appropriate version bump by analyzing commits since the last tag, runs tests, updates the changelog, and creates the git tag.
+
 ## Version Numbering
 
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
@@ -22,7 +32,9 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 | Update documentation | PATCH |
 | Update dependencies (no API change) | PATCH |
 
-## Release Steps
+## Manual Release Steps
+
+For reference, or if not using Claude Code:
 
 1. **Update CHANGELOG.md**
    - Add new section: `## [X.Y.Z] - YYYY-MM-DD`
