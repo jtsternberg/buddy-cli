@@ -283,4 +283,48 @@ class ConfigCommandsTest extends TestCase
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('Configuration valid', $tester->getDisplay());
     }
+
+    public function testConfigShowIndicatesEnvSource(): void
+    {
+        // Set config file value
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'workspace', 'value' => 'config-workspace']);
+
+        // Set env var
+        $this->setEnv('BUDDY_PROJECT', 'env-project');
+
+        $app = new Application();
+        $command = $app->find('config:show');
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $output = $tester->getDisplay();
+        // Config value should not have (env) indicator
+        $this->assertStringContainsString('config-workspace', $output);
+        $this->assertStringNotContainsString('config-workspace (env)', $output);
+        // Env value should have (env) indicator
+        $this->assertStringContainsString('env-project (env)', $output);
+    }
+
+    public function testConfigShowEnvOverridesConfigFile(): void
+    {
+        // Set config file value
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'workspace', 'value' => 'config-workspace']);
+
+        // Set env var with same key
+        $this->setEnv('BUDDY_WORKSPACE', 'env-workspace');
+
+        $app = new Application();
+        $command = $app->find('config:show');
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $output = $tester->getDisplay();
+        // Should show env value, not config value
+        $this->assertStringContainsString('env-workspace (env)', $output);
+        $this->assertStringNotContainsString('config-workspace', $output);
+    }
 }

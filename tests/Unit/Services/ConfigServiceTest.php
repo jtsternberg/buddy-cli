@@ -132,4 +132,39 @@ class ConfigServiceTest extends TestCase
 
         $this->assertNull($config->get('token'));
     }
+
+    public function testAllWithSourcesReturnsConfigSource(): void
+    {
+        $config = new ConfigService();
+        $config->set('workspace', 'file-workspace');
+
+        $result = $config->allWithSources();
+
+        $this->assertSame('file-workspace', $result['workspace']['value']);
+        $this->assertSame('config', $result['workspace']['source']);
+    }
+
+    public function testAllWithSourcesReturnsEnvSource(): void
+    {
+        $this->setEnv('BUDDY_TOKEN', 'env-token');
+
+        $config = new ConfigService();
+        $result = $config->allWithSources();
+
+        $this->assertSame('env-token', $result['token']['value']);
+        $this->assertSame('env', $result['token']['source']);
+    }
+
+    public function testAllWithSourcesEnvOverridesConfig(): void
+    {
+        $config = new ConfigService();
+        $config->set('workspace', 'file-workspace');
+
+        $this->setEnv('BUDDY_WORKSPACE', 'env-workspace');
+
+        $result = $config->allWithSources();
+
+        $this->assertSame('env-workspace', $result['workspace']['value']);
+        $this->assertSame('env', $result['workspace']['source']);
+    }
 }
