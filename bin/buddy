@@ -31,6 +31,13 @@ if ($autoloader === null) {
 
 require $autoloader;
 
+// Load .env from current working directory if it exists
+$cwd = getcwd();
+if ($cwd !== false && file_exists($cwd . '/.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable($cwd);
+    $dotenv->safeLoad();
+}
+
 use BuddyCli\Application;
 
 $app = new Application();

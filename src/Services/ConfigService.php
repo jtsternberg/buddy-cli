@@ -30,13 +30,30 @@ class ConfigService
         // Environment variables take precedence
         $envKey = self::ENV_MAP[$key] ?? null;
         if ($envKey !== null) {
-            $envValue = getenv($envKey);
-            if ($envValue !== false && $envValue !== '') {
+            $envValue = $this->getEnv($envKey);
+            if ($envValue !== null) {
                 return $envValue;
             }
         }
 
         return $this->config[$key] ?? $default;
+    }
+
+    /**
+     * Get environment variable from getenv() or $_ENV.
+     */
+    private function getEnv(string $key): ?string
+    {
+        $value = getenv($key);
+        if ($value !== false && $value !== '') {
+            return $value;
+        }
+
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return $_ENV[$key];
+        }
+
+        return null;
     }
 
     public function set(string $key, string $value): void
@@ -63,8 +80,8 @@ class ConfigService
 
         // Overlay environment variables
         foreach (self::ENV_MAP as $key => $envKey) {
-            $envValue = getenv($envKey);
-            if ($envValue !== false && $envValue !== '') {
+            $envValue = $this->getEnv($envKey);
+            if ($envValue !== null) {
                 $result[$key] = $envValue;
             }
         }
