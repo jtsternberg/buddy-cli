@@ -22,26 +22,31 @@ Create a new release. Version can be provided as $1, or auto-detected from commi
    - `composer test` - All tests must pass
    - `composer lint` - Code must be formatted
 
-3. **Update CHANGELOG.md**:
-   - Add section `## [X.Y.Z] - YYYY-MM-DD` (use today's date)
-   - Categorize changes under: Added, Changed, Fixed, Removed
-   - Follow Keep a Changelog format
+3. **Generate changelog content**:
+   - Analyze commits and categorize under: Added, Changed, Fixed, Removed
+   - Format as markdown following Keep a Changelog format
+   - Store this content as `$CHANGELOG_CONTENT` to reuse in CHANGELOG.md and GitHub release
 
-4. **Commit and tag**:
+4. **Update CHANGELOG.md**:
+   - Add section `## [X.Y.Z] - YYYY-MM-DD` (use today's date)
+   - Insert the generated changelog content ($CHANGELOG_CONTENT) from step 3
+
+5. **Commit and tag**:
    ```bash
    git add CHANGELOG.md
    git commit -m "Prepare release vX.Y.Z"
    git tag vX.Y.Z
    ```
 
-5. **Push** (ask for confirmation first):
+6. **Push** (ask for confirmation first):
    ```bash
    git push origin master --tags
    ```
 
-6. **Create GitHub release** (optional, ask user):
+7. **Create GitHub release** (optional, ask user):
+   - Use the changelog content from step 3 as the release notes
    ```bash
-   gh release create vX.Y.Z --title "vX.Y.Z" --notes "See CHANGELOG.md for details."
+   gh release create vX.Y.Z --title "vX.Y.Z" --notes "$CHANGELOG_CONTENT"
    ```
 
 Reference: @RELEASE.md for version numbering guidelines.
