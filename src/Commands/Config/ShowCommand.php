@@ -22,14 +22,15 @@ class ShowCommand extends BaseCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $config = $this->getConfigService()->all();
+        $configService = $this->getConfigService();
+        $configWithSources = $configService->allWithSources();
 
         if ($this->isJsonOutput($input)) {
-            $this->outputJson($output, $config);
+            $this->outputJson($output, $configService->all());
             return self::SUCCESS;
         }
 
-        if (empty($config)) {
+        if (empty($configWithSources)) {
             $output->writeln('<comment>No configuration set.</comment>');
             $output->writeln('');
             $output->writeln('Set configuration with:');
@@ -39,23 +40,26 @@ class ShowCommand extends BaseCommand
             return self::SUCCESS;
         }
 
-        // Mask the token for display
-        $displayConfig = [];
-        foreach ($config as $key => $value) {
-            if ($key === 'token' && strlen($value) > 8) {
-                $displayConfig[$key] = substr($value, 0, 4) . '...' . substr($value, -4);
-            } else {
-                $displayConfig[$key] = $value;
+        // Build display rows with source indicator
+        $rows = [];
+        foreach ($configWithSources as $key => $data) {
+            $value = $data['value'];
+            $source = $data['source'];
+
+            // Mask tokens for display
+            if (($key === 'token' || $key === 'refresh_token') && strlen($value) > 8) {
+                $value = substr($value, 0, 4) . '...' . substr($value, -4);
             }
+
+            // Add source indicator for env values
+            if ($source === 'env') {
+                $value .= ' <comment>(env)</comment>';
+            }
+
+            $rows[$key] = $value;
         }
 
-        TableFormatter::keyValue($output, $displayConfig, 'Current Configuration');
-
-        $configPath = $this->getConfigService()->getConfigFilePath();
-        if ($configPath !== null) {
-            $output->writeln('');
-            $output->writeln("<comment>Config file:</comment> {$configPath}");
-        }
+        TableFormatter::keyValue($output, $rows, 'Current Configuration');
 
         return self::SUCCESS;
     }

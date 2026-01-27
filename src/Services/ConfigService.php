@@ -89,6 +89,31 @@ class ConfigService
         return $result;
     }
 
+    /**
+     * Get all config values with their sources.
+     *
+     * @return array<string, array{value: string, source: string}>
+     */
+    public function allWithSources(): array
+    {
+        $result = [];
+
+        // Add config file values
+        foreach ($this->config as $key => $value) {
+            $result[$key] = ['value' => $value, 'source' => 'config'];
+        }
+
+        // Overlay environment variables
+        foreach (self::ENV_MAP as $key => $envKey) {
+            $envValue = $this->getEnv($envKey);
+            if ($envValue !== null) {
+                $result[$key] = ['value' => $envValue, 'source' => 'env'];
+            }
+        }
+
+        return $result;
+    }
+
     public function getConfigFilePath(): ?string
     {
         return $this->userConfigPath;
