@@ -53,7 +53,13 @@ class ShowCommand extends BaseCommand
 
             // Add source indicator for env values
             if ($source === 'env') {
-                $value .= ' <comment>(env)</comment>';
+                $path = $data['path'] ?? null;
+                if ($path !== null) {
+                    $relativePath = $this->getRelativePath($path);
+                    $value .= " <comment>({$relativePath})</comment>";
+                } else {
+                    $value .= ' <comment>(env)</comment>';
+                }
             }
 
             $rows[$key] = $value;
@@ -62,5 +68,40 @@ class ShowCommand extends BaseCommand
         TableFormatter::keyValue($output, $rows, 'Current Configuration');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Get a relative path from cwd to the given absolute path.
+     */
+    private function getRelativePath(string $absolutePath): string
+    {
+        $cwd = getcwd();
+        if ($cwd === false) {
+            return $absolutePath;
+        }
+
+        // Resolve symlinks for comparison
+        $realCwd = realpath($cwd) ?: $cwd;
+        $realPath = realpath(dirname($absolutePath)) ?: dirname($absolutePath);
+        $filename = basename($absolutePath);
+
+        // Same directory
+        if ($realPath === $realCwd) {
+            return "./{$filename}";
+        }
+
+        // Check if path is under cwd
+        if (str_starts_with($realPath, $realCwd . '/')) {
+            return './' . substr($realPath, strlen($realCwd) + 1) . '/' . $filename;
+        }
+
+        // Check if path is a parent of cwd
+        if (str_starts_with($realCwd, $realPath . '/')) {
+            $depth = substr_count(substr($realCwd, strlen($realPath)), '/');
+            return str_repeat('../', $depth) . $filename;
+        }
+
+        // Fall back to absolute path
+        return $absolutePath;
     }
 }

@@ -31,11 +31,10 @@ if ($autoloader === null) {
 
 require $autoloader;
 
-// Load .env from current working directory if it exists
+// Load .env files from current directory and all parent directories
 $cwd = getcwd();
-if ($cwd !== false && file_exists($cwd . '/.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable($cwd);
-    $dotenv->safeLoad();
+if ($cwd !== false) {
+    BuddyCli\Services\EnvLoader::loadRecursive($cwd);
 }
 
 use BuddyCli\Application;

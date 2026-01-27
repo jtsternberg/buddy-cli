@@ -92,7 +92,7 @@ class ConfigService
     /**
      * Get all config values with their sources.
      *
-     * @return array<string, array{value: string, source: string}>
+     * @return array<string, array{value: string, source: string, path?: string}>
      */
     public function allWithSources(): array
     {
@@ -107,7 +107,12 @@ class ConfigService
         foreach (self::ENV_MAP as $key => $envKey) {
             $envValue = $this->getEnv($envKey);
             if ($envValue !== null) {
-                $result[$key] = ['value' => $envValue, 'source' => 'env'];
+                $entry = ['value' => $envValue, 'source' => 'env'];
+                $envPath = EnvLoader::getSource($envKey);
+                if ($envPath !== null) {
+                    $entry['path'] = $envPath;
+                }
+                $result[$key] = $entry;
             }
         }
 
