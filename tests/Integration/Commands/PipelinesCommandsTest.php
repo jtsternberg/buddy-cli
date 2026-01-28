@@ -543,4 +543,201 @@ class PipelinesCommandsTest extends TestCase
         $this->assertStringContainsString('docker_image_name: php', $content);
         $this->assertStringContainsString('composer install', $content);
     }
+
+    // pipelines:show tests
+
+    public function testPipelinesShowRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', 'pipeline-id' => '1']);
+    }
+
+    public function testPipelinesShowRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', 'pipeline-id' => '1']);
+    }
+
+    public function testPipelinesShowDisplaysPipelineDetails(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->with('ws', 'proj', 1)
+            ->willReturn([
+                'id' => 1,
+                'name' => 'Deploy Production',
+                'last_execution_status' => 'SUCCESSFUL',
+                'trigger_mode' => 'MANUAL',
+                'ref_name' => 'refs/heads/main',
+                'last_execution_date' => '2024-01-15T10:00:00Z',
+                'create_date' => '2023-06-01T09:00:00Z',
+            ]);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->with('ws', 'proj', 1)
+            ->willReturn(['actions' => []]);
+
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Deploy Production', $output);
+        $this->assertStringContainsString('SUCCESSFUL', $output);
+        $this->assertStringContainsString('MANUAL', $output);
+        $this->assertStringContainsString('refs/heads/main', $output);
+    }
+
+    public function testPipelinesShowDisplaysActions(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'name' => 'Deploy']);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->willReturn([
+                'actions' => [
+                    [
+                        'id' => 10,
+                        'name' => 'Build Application',
+                        'type' => 'BUILD',
+                        'trigger_conditions' => [],
+                    ],
+                    [
+                        'id' => 20,
+                        'name' => 'Deploy to Server',
+                        'type' => 'SFTP',
+                        'trigger_conditions' => [
+                            ['trigger_condition' => 'VAR_IS', 'trigger_variable_key' => 'ENV', 'trigger_variable_value' => 'prod'],
+                        ],
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Actions:', $output);
+        $this->assertStringContainsString('Build Application', $output);
+        $this->assertStringContainsString('BUILD', $output);
+        $this->assertStringContainsString('Deploy to Server', $output);
+        $this->assertStringContainsString('SFTP', $output);
+        $this->assertStringContainsString('VAR_IS:ENV=prod', $output);
+    }
+
+    public function testPipelinesShowJsonOutput(): void
+    {
+        $pipeline = [
+            'id' => 1,
+            'name' => 'Deploy',
+            'trigger_mode' => 'MANUAL',
+            'ref_name' => 'refs/heads/main',
+        ];
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn($pipeline);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->willReturn(['actions' => []]);
+
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertSame(1, $data['id']);
+        $this->assertSame('Deploy', $data['name']);
+        $this->assertSame('MANUAL', $data['trigger_mode']);
+    }
+
+    public function testPipelinesShowYamlOutput(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn([
+                'id' => 1,
+                'name' => 'Deploy',
+                'trigger_mode' => 'MANUAL',
+                'ref_name' => 'refs/heads/main',
+                'events' => ['PUSH'],
+            ]);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->willReturn([
+                'actions' => [
+                    [
+                        'name' => 'Build',
+                        'type' => 'BUILD',
+                        'docker_image_name' => 'php',
+                        'docker_image_tag' => '8.2',
+                        'execute_commands' => ['composer install'],
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--yaml' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('name: Deploy', $output);
+        $this->assertStringContainsString('trigger_mode: MANUAL', $output);
+        $this->assertStringContainsString('ref_name: refs/heads/main', $output);
+        $this->assertStringContainsString('name: Build', $output);
+        $this->assertStringContainsString('type: BUILD', $output);
+        $this->assertStringContainsString('docker_image_name: php', $output);
+    }
+
+    public function testPipelinesShowNoActions(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'name' => 'Empty Pipeline']);
+
+        $this->mockBuddyService->method('getPipelineActions')
+            ->willReturn(['actions' => []]);
+
+        $command = $this->app->find('pipelines:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Empty Pipeline', $output);
+        // Should not show Actions section when empty
+        $this->assertStringNotContainsString('Actions:', $output);
+    }
 }
