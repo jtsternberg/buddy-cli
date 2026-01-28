@@ -208,6 +208,49 @@ class BuddyService
         );
     }
 
+    // Webhook methods
+
+    public function getWebhooks(string $workspace): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiWebhooks()->getWebhooks($workspace)->getBody()
+        );
+    }
+
+    public function getWebhook(string $workspace, int $webhookId): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiWebhooks()->getWebhook($workspace, $webhookId)->getBody()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data Webhook data: target_url, events, project_filter, secret_key
+     */
+    public function createWebhook(string $workspace, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiWebhooks()->addWebhook($data, $workspace)->getBody()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data Webhook data to update
+     */
+    public function updateWebhook(string $workspace, int $webhookId, array $data): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiWebhooks()->editWebhook($data, $workspace, $webhookId)->getBody()
+        );
+    }
+
+    public function deleteWebhook(string $workspace, int $webhookId): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiWebhooks()->deleteWebhook($workspace, $webhookId)->getBody()
+        );
+    }
+
     /**
      * Execute an API call with automatic token refresh on 401.
      */

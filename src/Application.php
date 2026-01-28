@@ -33,6 +33,11 @@ use BuddyCli\Commands\Variables\DeleteCommand as VariablesDeleteCommand;
 use BuddyCli\Commands\Variables\ListCommand as VariablesListCommand;
 use BuddyCli\Commands\Variables\SetCommand as VariablesSetCommand;
 use BuddyCli\Commands\Variables\ShowCommand as VariablesShowCommand;
+use BuddyCli\Commands\Webhooks\CreateCommand as WebhooksCreateCommand;
+use BuddyCli\Commands\Webhooks\DeleteCommand as WebhooksDeleteCommand;
+use BuddyCli\Commands\Webhooks\ListCommand as WebhooksListCommand;
+use BuddyCli\Commands\Webhooks\ShowCommand as WebhooksShowCommand;
+use BuddyCli\Commands\Webhooks\UpdateCommand as WebhooksUpdateCommand;
 use BuddyCli\Services\BuddyService;
 use BuddyCli\Services\ConfigService;
 use Symfony\Component\Console\Application as ConsoleApplication;
@@ -116,6 +121,13 @@ class Application extends ConsoleApplication
         $this->addCommand(new VariablesShowCommand($this));
         $this->addCommand(new VariablesSetCommand($this));
         $this->addCommand(new VariablesDeleteCommand($this));
+
+        // Webhook commands
+        $this->addCommand(new WebhooksListCommand($this));
+        $this->addCommand(new WebhooksShowCommand($this));
+        $this->addCommand(new WebhooksCreateCommand($this));
+        $this->addCommand(new WebhooksUpdateCommand($this));
+        $this->addCommand(new WebhooksDeleteCommand($this));
 
         // Self commands
         $this->addCommand(new SelfInstallCommand($this));
