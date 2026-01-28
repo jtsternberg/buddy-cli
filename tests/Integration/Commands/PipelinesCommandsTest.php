@@ -740,4 +740,266 @@ class PipelinesCommandsTest extends TestCase
         // Should not show Actions section when empty
         $this->assertStringNotContainsString('Actions:', $output);
     }
+
+    // pipelines:create tests
+
+    public function testPipelinesCreateRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', 'file' => 'test.yaml']);
+    }
+
+    public function testPipelinesCreateRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', 'file' => 'test.yaml']);
+    }
+
+    public function testPipelinesCreateFileNotFound(): void
+    {
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'file' => '/nonexistent/file.yaml',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('File not found', $tester->getDisplay());
+    }
+
+    public function testPipelinesCreateRequiresName(): void
+    {
+        $yamlFile = $this->writeTempFile('pipeline.yaml', "trigger_mode: MANUAL\n");
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Pipeline name is required', $tester->getDisplay());
+    }
+
+    public function testPipelinesCreateSuccess(): void
+    {
+        $yaml = <<<'YAML'
+name: "Test Pipeline"
+trigger_mode: MANUAL
+ref_name: refs/heads/main
+YAML;
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->method('createPipeline')
+            ->with('ws', 'proj', [
+                'name' => 'Test Pipeline',
+                'trigger_mode' => 'MANUAL',
+                'ref_name' => 'refs/heads/main',
+            ])
+            ->willReturn(['id' => 99, 'name' => 'Test Pipeline']);
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Created pipeline: Test Pipeline', $output);
+        $this->assertStringContainsString('ID: 99', $output);
+    }
+
+    public function testPipelinesCreateWithActions(): void
+    {
+        $yaml = <<<'YAML'
+name: "Pipeline with Actions"
+trigger_mode: MANUAL
+ref_name: refs/heads/main
+actions:
+  - name: "Build"
+    type: BUILD
+    docker_image_name: php
+    execute_commands:
+      - composer install
+  - name: "Deploy"
+    type: SFTP
+YAML;
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->method('createPipeline')
+            ->willReturn(['id' => 100, 'name' => 'Pipeline with Actions']);
+
+        $this->mockBuddyService->method('createPipelineAction')
+            ->willReturnOnConsecutiveCalls(
+                ['id' => 1, 'name' => 'Build'],
+                ['id' => 2, 'name' => 'Deploy']
+            );
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Created pipeline: Pipeline with Actions', $output);
+        $this->assertStringContainsString('Creating actions...', $output);
+        $this->assertStringContainsString('Created action: Build', $output);
+        $this->assertStringContainsString('Created action: Deploy', $output);
+    }
+
+    public function testPipelinesCreateHandlesApiError(): void
+    {
+        $yaml = "name: Test\n";
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->method('createPipeline')
+            ->willThrowException(new BuddyResponseException(400, [], '{"error":"Invalid config"}'));
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Import failed', $tester->getDisplay());
+    }
+
+    // pipelines:update tests
+
+    public function testPipelinesUpdateRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:update');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', 'pipeline-id' => '1', 'file' => 'test.yaml']);
+    }
+
+    public function testPipelinesUpdateRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:update');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', 'pipeline-id' => '1', 'file' => 'test.yaml']);
+    }
+
+    public function testPipelinesUpdateFileNotFound(): void
+    {
+        $command = $this->app->find('pipelines:update');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            'file' => '/nonexistent/file.yaml',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('File not found', $tester->getDisplay());
+    }
+
+    public function testPipelinesUpdateSuccess(): void
+    {
+        $yaml = <<<'YAML'
+name: "Updated Pipeline"
+trigger_mode: ON_EVERY_PUSH
+ref_name: refs/heads/develop
+YAML;
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->method('updatePipeline')
+            ->with('ws', 'proj', 123, [
+                'name' => 'Updated Pipeline',
+                'trigger_mode' => 'ON_EVERY_PUSH',
+                'ref_name' => 'refs/heads/develop',
+            ])
+            ->willReturn(['id' => 123, 'name' => 'Updated Pipeline']);
+
+        $command = $this->app->find('pipelines:update');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '123',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Updated pipeline: Updated Pipeline', $output);
+        $this->assertStringContainsString('ID: 123', $output);
+    }
+
+    public function testPipelinesUpdateIgnoresActions(): void
+    {
+        $yaml = <<<'YAML'
+name: "Pipeline"
+actions:
+  - name: "Build"
+    type: BUILD
+YAML;
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        // Actions should be stripped from the update data
+        $this->mockBuddyService->method('updatePipeline')
+            ->with('ws', 'proj', 1, ['name' => 'Pipeline'])
+            ->willReturn(['id' => 1, 'name' => 'Pipeline']);
+
+        $command = $this->app->find('pipelines:update');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function testPipelinesUpdateHandlesApiError(): void
+    {
+        $yaml = "name: Test\n";
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->method('updatePipeline')
+            ->willThrowException(new BuddyResponseException(404, [], '{"error":"Pipeline not found"}'));
+
+        $command = $this->app->find('pipelines:update');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '999',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Update failed', $tester->getDisplay());
+    }
 }

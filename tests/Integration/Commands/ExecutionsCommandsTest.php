@@ -284,6 +284,36 @@ class ExecutionsCommandsTest extends TestCase
 
     // executions:failed tests
 
+    public function testExecutionsFailedRequiresWorkspace(): void
+    {
+        $command = $this->app->find('executions:failed');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', '--pipeline' => '1', 'execution-id' => '100']);
+    }
+
+    public function testExecutionsFailedRequiresProject(): void
+    {
+        $command = $this->app->find('executions:failed');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', '--pipeline' => '1', 'execution-id' => '100']);
+    }
+
+    public function testExecutionsFailedRequiresPipeline(): void
+    {
+        $command = $this->app->find('executions:failed');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Pipeline ID is required');
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'execution-id' => '100']);
+    }
+
     public function testExecutionsFailedNoFailures(): void
     {
         $this->mockBuddyService->method('getExecution')
