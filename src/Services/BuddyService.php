@@ -76,6 +76,34 @@ class BuddyService
         );
     }
 
+    public function getPipelineYaml(string $workspace, string $projectName, int $pipelineId): string
+    {
+        $response = $this->withAutoRefresh(
+            fn () => $this->buddy->getApiPipelinesYaml()->getYaml($workspace, $projectName, $pipelineId)->getBody()
+        );
+
+        $encoded = $response['yaml'] ?? null;
+        if (!$encoded) {
+            throw new \RuntimeException('Buddy API did not return YAML content.');
+        }
+
+        $decoded = base64_decode($encoded, true);
+        if ($decoded === false) {
+            throw new \RuntimeException('Failed to decode YAML content from Buddy API.');
+        }
+
+        return $decoded;
+    }
+
+    public function updatePipelineYaml(string $workspace, string $projectName, int $pipelineId, string $yaml): void
+    {
+        $payload = ['yaml' => base64_encode($yaml)];
+
+        $this->withAutoRefresh(
+            fn () => $this->buddy->getApiPipelinesYaml()->updateYaml($payload, $workspace, $projectName, $pipelineId)->getBody()
+        );
+    }
+
     public function createPipeline(string $workspace, string $projectName, array $data): array
     {
         return $this->withAutoRefresh(

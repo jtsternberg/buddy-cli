@@ -11,6 +11,7 @@ use Buddy\BuddyResponse;
 use Buddy\Exceptions\BuddyResponseException;
 use BuddyCli\Api\ExtendedBuddy;
 use BuddyCli\Api\ExtendedExecutions;
+use BuddyCli\Api\PipelinesYamlApi;
 use BuddyCli\Services\BuddyService;
 use BuddyCli\Services\ConfigService;
 use BuddyCli\Tests\TestCase;
@@ -143,6 +144,41 @@ class BuddyServiceTest extends TestCase
 
         $result = $this->service->getPipeline('my-ws', 'project1', 1);
         $this->assertSame($expected, $result);
+    }
+
+    public function testGetPipelineYamlDecodes(): void
+    {
+        $yaml = "pipeline: Deploy\n";
+        $encoded = base64_encode($yaml);
+
+        $pipelinesYamlApi = $this->createMock(PipelinesYamlApi::class);
+        $pipelinesYamlApi->method('getYaml')
+            ->with('my-ws', 'project1', 1)
+            ->willReturn($this->createMockResponse(['yaml' => $encoded]));
+
+        $this->mockBuddy->method('getApiPipelinesYaml')
+            ->willReturn($pipelinesYamlApi);
+
+        $result = $this->service->getPipelineYaml('my-ws', 'project1', 1);
+        $this->assertSame($yaml, $result);
+    }
+
+    public function testUpdatePipelineYamlEncodes(): void
+    {
+        $yaml = "pipeline: Deploy\n";
+        $encoded = base64_encode($yaml);
+
+        $pipelinesYamlApi = $this->createMock(PipelinesYamlApi::class);
+        $pipelinesYamlApi->expects($this->once())
+            ->method('updateYaml')
+            ->with(['yaml' => $encoded], 'my-ws', 'project1', 1)
+            ->willReturn($this->createMockResponse([]));
+
+        $this->mockBuddy->method('getApiPipelinesYaml')
+            ->willReturn($pipelinesYamlApi);
+
+        $this->service->updatePipelineYaml('my-ws', 'project1', 1, $yaml);
+        $this->assertTrue(true);
     }
 
     public function testGetExecutions(): void

@@ -19,34 +19,10 @@ class CreateCommand extends BaseCommand
             ->setDescription('Create new pipeline from YAML file')
             ->addArgument('file', InputArgument::REQUIRED, 'YAML file path')
             ->setHelp(<<<'HELP'
-Creates a new pipeline from a YAML file. Requires <info>name</info> field.
+Creates a new pipeline from a native Buddy YAML file. Requires a pipeline name.
 
-Pipeline YAML fields:
-  name                       Pipeline name (required)
-  trigger_mode               MANUAL (default), ON_EVERY_PUSH, or SCHEDULED
-  ref_name                   Git branch/tag reference (e.g., refs/heads/main)
-  events                     Trigger events for ON_EVERY_PUSH mode
-  priority                   Execution priority (NORMAL, HIGH, LOW)
-  fetch_all_refs             Fetch all git refs (default: false)
-  always_from_scratch        Clean workspace each run (default: false)
-  auto_clear_cache           Clear cache automatically (default: false)
-  no_skip_to_most_recent     Don't skip to latest commit (default: false)
-  terminate_stale_runs       Cancel older runs when new one starts (default: false)
-  concurrent_pipeline_runs   Allow concurrent executions (default: false)
-  fail_on_prepare_env_warning  Fail on environment warnings (default: false)
-  variables                  Pipeline-level variables
-  actions                    List of actions (optional, created after pipeline)
-
-Action YAML fields (within actions list):
-  name                 Action name (required)
-  type                 Action type (required): BUILD, SFTP, SSH_COMMAND, SLACK, etc.
-  trigger_time         ON_EVERY_EXECUTION (default), ON_FAILURE, or ON_BACK_TO_SUCCESS
-  docker_image_name    Docker image (for BUILD actions)
-  docker_image_tag     Docker image tag (default: latest)
-  execute_commands     Commands to execute
-  setup_commands       Setup commands
-  shell                Shell to use (BASH, SH)
-  working_directory    Working directory path
+The YAML is applied as the full pipeline configuration (lossless). This command
+creates a pipeline with minimal metadata first, then patches the native YAML.
 
 Example YAML:
   name: "Deploy to Production"
@@ -80,29 +56,19 @@ HELP);
 
         $yaml = file_get_contents($file);
         $config = YamlFormatter::parse($yaml);
+        $pipelineConfig = $this->extractPipelineConfig($config);
 
-        if (empty($config['name'])) {
+        if (empty($pipelineConfig['name']) && empty($pipelineConfig['pipeline'])) {
             $output->writeln('<error>Pipeline name is required in YAML configuration</error>');
             return self::FAILURE;
         }
 
-        $actions = $config['actions'] ?? [];
-        unset($config['actions']);
-
-        $pipelineData = $this->preparePipelineData($config);
+        $pipelineData = $this->preparePipelineData($pipelineConfig);
 
         try {
             $pipeline = $this->getBuddyService()->createPipeline($workspace, $project, $pipelineData);
+            $this->getBuddyService()->updatePipelineYaml($workspace, $project, (int) $pipeline['id'], $yaml);
             $output->writeln("<info>Created pipeline: {$pipeline['name']} (ID: {$pipeline['id']})</info>");
-
-            if (!empty($actions)) {
-                $output->writeln('<comment>Creating actions...</comment>');
-                foreach ($actions as $actionConfig) {
-                    $actionData = $this->prepareActionData($actionConfig);
-                    $action = $this->getBuddyService()->createPipelineAction($workspace, $project, (int) $pipeline['id'], $actionData);
-                    $output->writeln("  - Created action: {$action['name']}");
-                }
-            }
         } catch (\Exception $e) {
             $output->writeln("<error>Import failed: {$e->getMessage()}</error>");
             return self::FAILURE;
@@ -128,24 +94,23 @@ HELP);
             }
         }
 
-        return $data;
-    }
+        if (empty($data['name']) && isset($config['pipeline'])) {
+            $data['name'] = $config['pipeline'];
+        }
 
-    private function prepareActionData(array $config): array
-    {
-        $data = [];
-
-        $allowedFields = [
-            'name', 'type', 'trigger_time', 'docker_image_name', 'docker_image_tag',
-            'execute_commands', 'setup_commands', 'shell', 'working_directory',
-        ];
-
-        foreach ($allowedFields as $field) {
-            if (isset($config[$field])) {
-                $data[$field] = $config[$field];
-            }
+        if (empty($data['ref_name']) && isset($config['refs']) && is_array($config['refs']) && !empty($config['refs'][0])) {
+            $data['ref_name'] = $config['refs'][0];
         }
 
         return $data;
+    }
+
+    private function extractPipelineConfig(array $config): array
+    {
+        if (isset($config[0]) && is_array($config[0])) {
+            return $config[0];
+        }
+
+        return $config;
     }
 }

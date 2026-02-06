@@ -24,6 +24,7 @@ use BuddyCli\Commands\Pipelines\GetCommand;
 use BuddyCli\Commands\Pipelines\ListCommand as PipelinesListCommand;
 use BuddyCli\Commands\Pipelines\RetryCommand;
 use BuddyCli\Commands\Pipelines\RunCommand;
+use BuddyCli\Commands\Pipelines\SettingsCommand as PipelinesSettingsCommand;
 use BuddyCli\Commands\Pipelines\ShowCommand as PipelinesShowCommand;
 use BuddyCli\Commands\Pipelines\UpdateCommand;
 use BuddyCli\Commands\Projects\ListCommand as ProjectsListCommand;
@@ -97,6 +98,7 @@ class Application extends ConsoleApplication
         // Pipeline commands
         $this->addCommand(new PipelinesListCommand($this));
         $this->addCommand(new PipelinesShowCommand($this));
+        $this->addCommand(new PipelinesSettingsCommand($this));
         $this->addCommand(new RunCommand($this));
         $this->addCommand(new RetryCommand($this));
         $this->addCommand(new CancelCommand($this));
