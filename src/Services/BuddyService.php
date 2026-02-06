@@ -208,6 +208,22 @@ class BuddyService
         );
     }
 
+    // Pipeline YAML methods
+
+    public function exportPipelineYaml(string $workspace, string $projectName, int $pipelineId): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiPipelineYaml()->exportYaml($workspace, $projectName, $pipelineId)->getBody()
+        );
+    }
+
+    public function importPipelineYaml(string $workspace, string $projectName, int $pipelineId, string $base64Yaml): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiPipelineYaml()->importYaml(['yaml' => $base64Yaml], $workspace, $projectName, $pipelineId)->getBody()
+        );
+    }
+
     // Webhook methods
 
     public function getWebhooks(string $workspace): array

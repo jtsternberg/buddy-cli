@@ -1002,4 +1002,179 @@ YAML;
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('Update failed', $tester->getDisplay());
     }
+
+    // pipelines:export tests
+
+    public function testPipelinesExportRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:export');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', 'pipeline-id' => '1']);
+    }
+
+    public function testPipelinesExportRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:export');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', 'pipeline-id' => '1']);
+    }
+
+    public function testPipelinesExportSuccess(): void
+    {
+        $yamlContent = "name: Deploy\ntrigger_mode: MANUAL\n";
+        $base64Yaml = base64_encode($yamlContent);
+
+        $this->mockBuddyService->method('exportPipelineYaml')
+            ->with('ws', 'proj', 1)
+            ->willReturn(['yaml' => $base64Yaml]);
+
+        $command = $this->app->find('pipelines:export');
+        $tester = new CommandTester($command);
+
+        $originalDir = getcwd();
+        chdir($this->tempDir);
+        try {
+            $tester->execute([
+                '--workspace' => 'ws',
+                '--project' => 'proj',
+                'pipeline-id' => '1',
+            ]);
+        } finally {
+            chdir($originalDir);
+        }
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Exported pipeline YAML to pipeline-1.yaml', $tester->getDisplay());
+        $this->assertFileExists($this->tempDir . '/pipeline-1.yaml');
+        $this->assertSame($yamlContent, file_get_contents($this->tempDir . '/pipeline-1.yaml'));
+    }
+
+    public function testPipelinesExportCustomOutputPath(): void
+    {
+        $yamlContent = "name: Deploy\n";
+        $base64Yaml = base64_encode($yamlContent);
+
+        $this->mockBuddyService->method('exportPipelineYaml')
+            ->willReturn(['yaml' => $base64Yaml]);
+
+        $command = $this->app->find('pipelines:export');
+        $tester = new CommandTester($command);
+
+        $customPath = $this->tempDir . '/custom-export.yaml';
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--output' => $customPath,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString("Exported pipeline YAML to {$customPath}", $tester->getDisplay());
+        $this->assertFileExists($customPath);
+        $this->assertSame($yamlContent, file_get_contents($customPath));
+    }
+
+    public function testPipelinesExportHandlesApiError(): void
+    {
+        $this->mockBuddyService->method('exportPipelineYaml')
+            ->willThrowException(new BuddyResponseException(404, [], '{"error":"Pipeline not found"}'));
+
+        $command = $this->app->find('pipelines:export');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '999',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Export failed', $tester->getDisplay());
+    }
+
+    // pipelines:import tests
+
+    public function testPipelinesImportRequiresWorkspace(): void
+    {
+        $command = $this->app->find('pipelines:import');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', 'pipeline-id' => '1', 'file' => 'test.yaml']);
+    }
+
+    public function testPipelinesImportRequiresProject(): void
+    {
+        $command = $this->app->find('pipelines:import');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', 'pipeline-id' => '1', 'file' => 'test.yaml']);
+    }
+
+    public function testPipelinesImportFileNotFound(): void
+    {
+        $command = $this->app->find('pipelines:import');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            'file' => '/nonexistent/file.yaml',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('File not found', $tester->getDisplay());
+    }
+
+    public function testPipelinesImportSuccess(): void
+    {
+        $yamlContent = "name: Deploy\ntrigger_mode: MANUAL\n";
+        $yamlFile = $this->writeTempFile('import-pipeline.yaml', $yamlContent);
+        $expectedBase64 = base64_encode($yamlContent);
+
+        $this->mockBuddyService->method('importPipelineYaml')
+            ->with('ws', 'proj', 1, $expectedBase64)
+            ->willReturn(['yaml' => $expectedBase64]);
+
+        $command = $this->app->find('pipelines:import');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Imported pipeline YAML from', $tester->getDisplay());
+        $this->assertStringContainsString('pipeline 1', $tester->getDisplay());
+    }
+
+    public function testPipelinesImportHandlesApiError(): void
+    {
+        $yamlFile = $this->writeTempFile('bad-pipeline.yaml', "invalid: yaml\n");
+
+        $this->mockBuddyService->method('importPipelineYaml')
+            ->willThrowException(new BuddyResponseException(400, [], '{"error":"Invalid YAML"}'));
+
+        $command = $this->app->find('pipelines:import');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            'file' => $yamlFile,
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Import failed', $tester->getDisplay());
+    }
 }
