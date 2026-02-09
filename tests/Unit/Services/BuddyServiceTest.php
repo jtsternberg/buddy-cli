@@ -163,6 +163,36 @@ class BuddyServiceTest extends TestCase
         $this->assertSame($yaml, $result);
     }
 
+    public function testGetPipelineYamlThrowsWhenYamlKeyMissing(): void
+    {
+        $pipelinesYamlApi = $this->createMock(PipelinesYamlApi::class);
+        $pipelinesYamlApi->method('getYaml')
+            ->with('my-ws', 'project1', 1)
+            ->willReturn($this->createMockResponse([]));
+
+        $this->mockBuddy->method('getApiPipelinesYaml')
+            ->willReturn($pipelinesYamlApi);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Buddy API did not return YAML content.');
+        $this->service->getPipelineYaml('my-ws', 'project1', 1);
+    }
+
+    public function testGetPipelineYamlThrowsOnInvalidBase64(): void
+    {
+        $pipelinesYamlApi = $this->createMock(PipelinesYamlApi::class);
+        $pipelinesYamlApi->method('getYaml')
+            ->with('my-ws', 'project1', 1)
+            ->willReturn($this->createMockResponse(['yaml' => '!!!invalid!!!']));
+
+        $this->mockBuddy->method('getApiPipelinesYaml')
+            ->willReturn($pipelinesYamlApi);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Failed to decode YAML content from Buddy API.');
+        $this->service->getPipelineYaml('my-ws', 'project1', 1);
+    }
+
     public function testUpdatePipelineYamlEncodes(): void
     {
         $yaml = "pipeline: Deploy\n";
@@ -178,7 +208,6 @@ class BuddyServiceTest extends TestCase
             ->willReturn($pipelinesYamlApi);
 
         $this->service->updatePipelineYaml('my-ws', 'project1', 1, $yaml);
-        $this->assertTrue(true);
     }
 
     public function testGetExecutions(): void

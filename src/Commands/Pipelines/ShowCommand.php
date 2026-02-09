@@ -122,5 +122,4 @@ HELP);
 
         return implode(', ', $formatted);
     }
-
 }

@@ -915,7 +915,7 @@ YAML;
         $this->assertStringContainsString('Updated pipeline #123', $output);
     }
 
-    public function testPipelinesUpdateIgnoresActions(): void
+    public function testPipelinesUpdateWithActionsInYaml(): void
     {
         $yaml = <<<'YAML'
 name: "Pipeline"

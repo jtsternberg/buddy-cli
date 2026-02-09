@@ -42,6 +42,11 @@ HELP);
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($this->isJsonOutput($input)) {
+            $output->writeln('<error>The --json flag is not supported for YAML export. Use pipelines:show --json for JSON output.</error>');
+            return self::FAILURE;
+        }
+
         $workspace = $this->requireWorkspace($input);
         $project = $this->requireProject($input);
         $pipelineId = (int) $input->getArgument('pipeline-id');
@@ -49,11 +54,13 @@ HELP);
         $yaml = $this->getBuddyService()->getPipelineYaml($workspace, $project, $pipelineId);
 
         $outputPath = $input->getOption('output') ?? "pipeline-{$pipelineId}.yaml";
-        file_put_contents($outputPath, $yaml);
+        if (file_put_contents($outputPath, $yaml) === false) {
+            $output->writeln("<error>Failed to write to {$outputPath}</error>");
+            return self::FAILURE;
+        }
 
         $output->writeln("<info>Saved pipeline config to {$outputPath}</info>");
 
         return self::SUCCESS;
     }
-
 }

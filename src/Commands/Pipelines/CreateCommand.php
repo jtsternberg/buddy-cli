@@ -64,35 +64,27 @@ HELP);
         }
 
         $pipelineData = $this->preparePipelineData($pipelineConfig);
+        $pipeline = null;
 
         try {
             $pipeline = $this->getBuddyService()->createPipeline($workspace, $project, $pipelineData);
             $this->getBuddyService()->updatePipelineYaml($workspace, $project, (int) $pipeline['id'], $yaml);
             $output->writeln("<info>Created pipeline: {$pipeline['name']} (ID: {$pipeline['id']})</info>");
         } catch (\Exception $e) {
-            $output->writeln("<error>Import failed: {$e->getMessage()}</error>");
+            $message = "Import failed: {$e->getMessage()}";
+            if ($pipeline !== null) {
+                $message .= " Pipeline #{$pipeline['id']} was created but YAML update failed — you may need to delete it manually.";
+            }
+            $output->writeln("<error>{$message}</error>");
             return self::FAILURE;
         }
 
         return self::SUCCESS;
     }
 
-    private function preparePipelineData(array $config): array
+    protected function preparePipelineData(array $config): array
     {
-        $data = [];
-
-        $allowedFields = [
-            'name', 'trigger_mode', 'ref_name', 'events', 'priority',
-            'fetch_all_refs', 'always_from_scratch', 'auto_clear_cache',
-            'no_skip_to_most_recent', 'terminate_stale_runs', 'concurrent_pipeline_runs',
-            'fail_on_prepare_env_warning', 'variables',
-        ];
-
-        foreach ($allowedFields as $field) {
-            if (isset($config[$field])) {
-                $data[$field] = $config[$field];
-            }
-        }
+        $data = parent::preparePipelineData($config);
 
         if (empty($data['name']) && isset($config['pipeline'])) {
             $data['name'] = $config['pipeline'];
@@ -105,6 +97,10 @@ HELP);
         return $data;
     }
 
+    /**
+     * Unwrap parsed YAML config if the parser returned it inside a
+     * numerically-indexed array (e.g. from document separator "---").
+     */
     private function extractPipelineConfig(array $config): array
     {
         if (isset($config[0]) && is_array($config[0])) {
