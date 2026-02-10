@@ -86,6 +86,7 @@ You: "What pipelines are available?"
 You: "Run the deploy pipeline"
 You: "Why did my last build fail?"
 You: "Show me the execution logs"
+You: "Check this build: https://app.buddy.works/myworkspace/myproject/pipelines/pipeline/123/execution/456"
 ```
 
 The plugin's skills automatically activate when discussing CI/CD topics.
@@ -125,8 +126,12 @@ Invoke directly with `/buddy-cli:<command>`:
 | `/buddy-cli:deploy` | Run a pipeline | `/buddy-cli:deploy production` |
 | `/buddy-cli:status` | Show execution status | `/buddy-cli:status --latest` |
 | `/buddy-cli:logs` | View execution logs | `/buddy-cli:logs --errors-only` |
+### Agents
 
-### Agent
+**url-parser** - Resolves `pipeline-name-or-id-or-url` inputs into CLI flags:
+- Parses Buddy.works URLs into workspace, project, pipeline, and execution IDs
+- Looks up pipeline names to find matching IDs
+- Returns structured flags for other commands to use
 
 **cicd-specialist** - Autonomous agent for complex CI/CD tasks:
 - Multi-step deployment workflows

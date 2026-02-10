@@ -5,13 +5,13 @@ Fetch and display pipeline execution logs.
 ## Usage
 
 ```
-/buddy-cli:logs [execution-id] [--pipeline=<id>] [--action=<name>] [--errors-only]
+/buddy-cli:logs [execution-id-or-url] [--pipeline=<id>] [--action=<name>] [--errors-only]
 ```
 
 ## Arguments
 
-- `execution-id` - Specific execution (optional, defaults to latest)
-- `--pipeline=<id>` - Pipeline ID (required if execution-id provided)
+- `execution-id-or-url` - Specific execution ID or a Buddy.works URL (optional, defaults to latest). If a URL is given, parse it per the `buddy-cli:url-parser` agent.
+- `--pipeline=<id>` - Pipeline ID (required if execution-id provided, not needed if URL given)
 - `--action=<name>` - Filter to specific action
 - `--errors-only` - Only show failed actions
 
@@ -50,7 +50,14 @@ For failed actions, highlight:
 - Exit codes
 - Suggestions for resolution
 
+## URL Support
+
+If a Buddy.works URL is provided, parse it per the `buddy-cli:url-parser` agent.
+
 ## Example Interactions
+
+User: `/buddy-cli:logs https://app.buddy.works/awesomemotive/lindris-frontend/pipelines/pipeline/506857/execution/698b463a`
+--> Parse URL, show logs for execution 698b463a on pipeline 506857
 
 User: `/buddy-cli:logs`
 → Show logs from most recent execution
