@@ -31,19 +31,22 @@ Create a new release. Version can be provided as $1, or auto-detected from commi
    - Add section `## [X.Y.Z] - YYYY-MM-DD` (use today's date)
    - Insert the generated changelog content ($CHANGELOG_CONTENT) from step 3
 
-5. **Commit and tag**:
+5. **Update plugin version**:
+   - Update the `"version"` field in `claude-plugin/.claude-plugin/plugin.json` to `X.Y.Z` (without the `v` prefix)
+
+6. **Commit and tag**:
    ```bash
-   git add CHANGELOG.md
+   git add CHANGELOG.md claude-plugin/.claude-plugin/plugin.json
    git commit -m "Prepare release vX.Y.Z"
    git tag vX.Y.Z
    ```
 
-6. **Push** (ask for confirmation first):
+7. **Push** (ask for confirmation first):
    ```bash
    git push origin master --tags
    ```
 
-7. **Create GitHub release** (optional, ask user):
+8. **Create GitHub release** (optional, ask user):
    - Use the changelog content from step 3 as the release notes
    ```bash
    gh release create vX.Y.Z --title "vX.Y.Z" --notes "$CHANGELOG_CONTENT"
