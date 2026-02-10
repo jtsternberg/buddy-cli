@@ -461,13 +461,9 @@ class PipelinesCommandsTest extends TestCase
 
     public function testPipelinesGetSuccess(): void
     {
-        $this->mockBuddyService->method('getPipeline')
+        $this->mockBuddyService->method('getPipelineYaml')
             ->with('ws', 'proj', 1)
-            ->willReturn(['id' => 1, 'name' => 'Deploy', 'trigger_mode' => 'MANUAL', 'ref_name' => 'refs/heads/main']);
-
-        $this->mockBuddyService->method('getPipelineActions')
-            ->with('ws', 'proj', 1)
-            ->willReturn(['actions' => [['name' => 'Build', 'type' => 'BUILD', 'docker_image_name' => 'php', 'execute_commands' => ['composer install']]]]);
+            ->willReturn("pipeline: Deploy\n");
 
         $command = $this->app->find('pipelines:get');
         $tester = new CommandTester($command);
@@ -491,11 +487,8 @@ class PipelinesCommandsTest extends TestCase
 
     public function testPipelinesGetCustomOutput(): void
     {
-        $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'name' => 'Deploy', 'trigger_mode' => 'MANUAL', 'ref_name' => 'refs/heads/main']);
-
-        $this->mockBuddyService->method('getPipelineActions')
-            ->willReturn(['actions' => []]);
+        $this->mockBuddyService->method('getPipelineYaml')
+            ->willReturn("pipeline: Deploy\n");
 
         $command = $this->app->find('pipelines:get');
         $tester = new CommandTester($command);
@@ -515,11 +508,8 @@ class PipelinesCommandsTest extends TestCase
 
     public function testPipelinesGetYamlContent(): void
     {
-        $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'name' => 'Deploy', 'trigger_mode' => 'MANUAL', 'ref_name' => 'refs/heads/main']);
-
-        $this->mockBuddyService->method('getPipelineActions')
-            ->willReturn(['actions' => [['name' => 'Build', 'type' => 'BUILD', 'docker_image_name' => 'php', 'execute_commands' => ['composer install']]]]);
+        $this->mockBuddyService->method('getPipelineYaml')
+            ->willReturn("pipeline: Deploy\nactions:\n  - action: Build\n    type: BUILD\n");
 
         $command = $this->app->find('pipelines:get');
         $tester = new CommandTester($command);
@@ -535,13 +525,9 @@ class PipelinesCommandsTest extends TestCase
         $this->assertFileExists($outputPath);
         $content = file_get_contents($outputPath);
 
-        $this->assertStringContainsString('name: Deploy', $content);
-        $this->assertStringContainsString('trigger_mode: MANUAL', $content);
-        $this->assertStringContainsString('ref_name: refs/heads/main', $content);
-        $this->assertStringContainsString('name: Build', $content);
+        $this->assertStringContainsString('pipeline: Deploy', $content);
+        $this->assertStringContainsString('action: Build', $content);
         $this->assertStringContainsString('type: BUILD', $content);
-        $this->assertStringContainsString('docker_image_name: php', $content);
-        $this->assertStringContainsString('composer install', $content);
     }
 
     // pipelines:show tests
@@ -677,27 +663,8 @@ class PipelinesCommandsTest extends TestCase
 
     public function testPipelinesShowYamlOutput(): void
     {
-        $this->mockBuddyService->method('getPipeline')
-            ->willReturn([
-                'id' => 1,
-                'name' => 'Deploy',
-                'trigger_mode' => 'MANUAL',
-                'ref_name' => 'refs/heads/main',
-                'events' => ['PUSH'],
-            ]);
-
-        $this->mockBuddyService->method('getPipelineActions')
-            ->willReturn([
-                'actions' => [
-                    [
-                        'name' => 'Build',
-                        'type' => 'BUILD',
-                        'docker_image_name' => 'php',
-                        'docker_image_tag' => '8.2',
-                        'execute_commands' => ['composer install'],
-                    ],
-                ],
-            ]);
+        $this->mockBuddyService->method('getPipelineYaml')
+            ->willReturn("pipeline: Deploy\nactions:\n  - action: Build\n    type: BUILD\n");
 
         $command = $this->app->find('pipelines:show');
         $tester = new CommandTester($command);
@@ -710,12 +677,9 @@ class PipelinesCommandsTest extends TestCase
 
         $this->assertSame(0, $tester->getStatusCode());
         $output = $tester->getDisplay();
-        $this->assertStringContainsString('name: Deploy', $output);
-        $this->assertStringContainsString('trigger_mode: MANUAL', $output);
-        $this->assertStringContainsString('ref_name: refs/heads/main', $output);
-        $this->assertStringContainsString('name: Build', $output);
+        $this->assertStringContainsString('pipeline: Deploy', $output);
+        $this->assertStringContainsString('action: Build', $output);
         $this->assertStringContainsString('type: BUILD', $output);
-        $this->assertStringContainsString('docker_image_name: php', $output);
     }
 
     public function testPipelinesShowNoActions(): void
@@ -802,13 +766,18 @@ ref_name: refs/heads/main
 YAML;
         $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
 
-        $this->mockBuddyService->method('createPipeline')
+        $this->mockBuddyService->expects($this->once())
+            ->method('createPipeline')
             ->with('ws', 'proj', [
                 'name' => 'Test Pipeline',
                 'trigger_mode' => 'MANUAL',
                 'ref_name' => 'refs/heads/main',
             ])
             ->willReturn(['id' => 99, 'name' => 'Test Pipeline']);
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('updatePipelineYaml')
+            ->with('ws', 'proj', 99, $yaml);
 
         $command = $this->app->find('pipelines:create');
         $tester = new CommandTester($command);
@@ -841,14 +810,13 @@ actions:
 YAML;
         $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
 
-        $this->mockBuddyService->method('createPipeline')
+        $this->mockBuddyService->expects($this->once())
+            ->method('createPipeline')
             ->willReturn(['id' => 100, 'name' => 'Pipeline with Actions']);
 
-        $this->mockBuddyService->method('createPipelineAction')
-            ->willReturnOnConsecutiveCalls(
-                ['id' => 1, 'name' => 'Build'],
-                ['id' => 2, 'name' => 'Deploy']
-            );
+        $this->mockBuddyService->expects($this->once())
+            ->method('updatePipelineYaml')
+            ->with('ws', 'proj', 100, $yaml);
 
         $command = $this->app->find('pipelines:create');
         $tester = new CommandTester($command);
@@ -861,9 +829,6 @@ YAML;
         $this->assertSame(0, $tester->getStatusCode());
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Created pipeline: Pipeline with Actions', $output);
-        $this->assertStringContainsString('Creating actions...', $output);
-        $this->assertStringContainsString('Created action: Build', $output);
-        $this->assertStringContainsString('Created action: Deploy', $output);
     }
 
     public function testPipelinesCreateHandlesApiError(): void
@@ -932,13 +897,9 @@ ref_name: refs/heads/develop
 YAML;
         $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
 
-        $this->mockBuddyService->method('updatePipeline')
-            ->with('ws', 'proj', 123, [
-                'name' => 'Updated Pipeline',
-                'trigger_mode' => 'ON_EVERY_PUSH',
-                'ref_name' => 'refs/heads/develop',
-            ])
-            ->willReturn(['id' => 123, 'name' => 'Updated Pipeline']);
+        $this->mockBuddyService->expects($this->once())
+            ->method('updatePipelineYaml')
+            ->with('ws', 'proj', 123, $yaml);
 
         $command = $this->app->find('pipelines:update');
         $tester = new CommandTester($command);
@@ -951,11 +912,10 @@ YAML;
 
         $this->assertSame(0, $tester->getStatusCode());
         $output = $tester->getDisplay();
-        $this->assertStringContainsString('Updated pipeline: Updated Pipeline', $output);
-        $this->assertStringContainsString('ID: 123', $output);
+        $this->assertStringContainsString('Updated pipeline #123', $output);
     }
 
-    public function testPipelinesUpdateIgnoresActions(): void
+    public function testPipelinesUpdateWithActionsInYaml(): void
     {
         $yaml = <<<'YAML'
 name: "Pipeline"
@@ -965,10 +925,9 @@ actions:
 YAML;
         $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
 
-        // Actions should be stripped from the update data
-        $this->mockBuddyService->method('updatePipeline')
-            ->with('ws', 'proj', 1, ['name' => 'Pipeline'])
-            ->willReturn(['id' => 1, 'name' => 'Pipeline']);
+        $this->mockBuddyService->expects($this->once())
+            ->method('updatePipelineYaml')
+            ->with('ws', 'proj', 1, $yaml);
 
         $command = $this->app->find('pipelines:update');
         $tester = new CommandTester($command);
@@ -987,7 +946,7 @@ YAML;
         $yaml = "name: Test\n";
         $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
 
-        $this->mockBuddyService->method('updatePipeline')
+        $this->mockBuddyService->method('updatePipelineYaml')
             ->willThrowException(new BuddyResponseException(404, [], '{"error":"Pipeline not found"}'));
 
         $command = $this->app->find('pipelines:update');
@@ -1001,5 +960,98 @@ YAML;
 
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('Update failed', $tester->getDisplay());
+    }
+
+    // pipelines:settings tests
+
+    public function testPipelinesSettingsDisplaysSettings(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->with('ws', 'proj', 1)
+            ->willReturn([
+                'id' => 1,
+                'name' => 'Deploy',
+                'trigger_mode' => 'MANUAL',
+                'ref_name' => 'refs/heads/main',
+                'priority' => 'HIGH',
+                'variables' => [
+                    ['key' => 'ENV', 'type' => 'VAR', 'settable' => true, 'description' => 'Environment'],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:settings');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Pipeline Settings: Deploy', $output);
+        $this->assertStringContainsString('MANUAL', $output);
+        $this->assertStringContainsString('refs/heads/main', $output);
+        $this->assertStringContainsString('Variables:', $output);
+        $this->assertStringContainsString('ENV', $output);
+    }
+
+    public function testPipelinesSettingsYamlOutput(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn([
+                'id' => 1,
+                'name' => 'Deploy',
+                'trigger_mode' => 'MANUAL',
+                'ref_name' => 'refs/heads/main',
+                'variables' => [
+                    ['key' => 'ENV', 'value' => 'prod', 'type' => 'VAR', 'settable' => true],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:settings');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--yaml' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('name: Deploy', $output);
+        $this->assertStringContainsString('trigger_mode: MANUAL', $output);
+        $this->assertStringContainsString('variables:', $output);
+        $this->assertStringContainsString('key: ENV', $output);
+    }
+
+    public function testPipelinesSettingsUpdate(): void
+    {
+        $yaml = <<<'YAML'
+name: "Updated"
+trigger_mode: MANUAL
+YAML;
+        $yamlFile = $this->writeTempFile('settings.yaml', $yaml);
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('updatePipeline')
+            ->with('ws', 'proj', 1, [
+                'name' => 'Updated',
+                'trigger_mode' => 'MANUAL',
+            ])
+            ->willReturn(['id' => 1, 'name' => 'Updated']);
+
+        $command = $this->app->find('pipelines:settings');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--update' => $yamlFile,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Updated pipeline settings', $tester->getDisplay());
     }
 }

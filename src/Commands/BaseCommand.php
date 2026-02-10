@@ -103,6 +103,26 @@ abstract class BaseCommand extends Command
         return (int) $pipelineId;
     }
 
+    protected function preparePipelineData(array $config): array
+    {
+        $data = [];
+
+        $allowedFields = [
+            'name', 'trigger_mode', 'ref_name', 'events', 'priority',
+            'fetch_all_refs', 'always_from_scratch', 'auto_clear_cache',
+            'no_skip_to_most_recent', 'terminate_stale_runs', 'concurrent_pipeline_runs',
+            'fail_on_prepare_env_warning', 'variables',
+        ];
+
+        foreach ($allowedFields as $field) {
+            if (isset($config[$field])) {
+                $data[$field] = $config[$field];
+            }
+        }
+
+        return $data;
+    }
+
     protected function formatStatus(string $status): string
     {
         return match ($status) {

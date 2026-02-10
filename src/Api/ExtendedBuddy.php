@@ -14,6 +14,7 @@ class ExtendedBuddy extends Buddy
 {
     private ExtendedExecutions $extendedExecutions;
     private VariablesApi $variables;
+    private PipelinesYamlApi $pipelinesYaml;
 
     /**
      * @param mixed[] $config
@@ -30,6 +31,7 @@ class ExtendedBuddy extends Buddy
 
         $this->extendedExecutions = new ExtendedExecutions($client, $config);
         $this->variables = new VariablesApi($client, $config);
+        $this->pipelinesYaml = new PipelinesYamlApi($client, $config);
     }
 
     public function getApiExecutions(): ExtendedExecutions
@@ -40,5 +42,10 @@ class ExtendedBuddy extends Buddy
     public function getApiVariables(): VariablesApi
     {
         return $this->variables;
+    }
+
+    public function getApiPipelinesYaml(): PipelinesYamlApi
+    {
+        return $this->pipelinesYaml;
     }
 }

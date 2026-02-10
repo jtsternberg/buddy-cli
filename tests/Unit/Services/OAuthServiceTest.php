@@ -92,6 +92,7 @@ class OAuthServiceTest extends TestCase
         $this->assertContains(BuddyOAuth::SCOPE_WORKSPACE, $scopes);
         $this->assertContains(BuddyOAuth::SCOPE_EXECUTION_INFO, $scopes);
         $this->assertContains(BuddyOAuth::SCOPE_EXECUTION_RUN, $scopes);
+        $this->assertContains(BuddyOAuth::SCOPE_EXECUTION_MANAGE, $scopes);
         $this->assertContains(BuddyOAuth::SCOPE_USER_INFO, $scopes);
         $this->assertContains(OAuthService::SCOPE_VARIABLE_INFO, $scopes);
         $this->assertContains(OAuthService::SCOPE_VARIABLE_ADD, $scopes);
