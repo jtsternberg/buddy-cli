@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-10
+
+### Added
+
+- URL parser agent for Buddy.works URL and pipeline input resolution
+- Webhook management commands (`webhooks:list`, `webhooks:show`, `webhooks:create`, `webhooks:update`, `webhooks:delete`)
+- Native Buddy YAML pipeline support (replaces custom YAML format)
+- `EXECUTION_MANAGE` scope to default OAuth scopes
+- Integration tests for `pipelines:show` and `login` commands
+- Integration and unit tests for remaining commands
+- Unit tests for OAuthService
+
+### Changed
+
+- Pipelines now use native Buddy YAML format
+- GitHub release notes reuse changelog content from release process
+
 ## [1.1.0] - 2026-01-27
 
 ### Added
