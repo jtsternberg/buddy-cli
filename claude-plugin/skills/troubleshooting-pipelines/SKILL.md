@@ -18,6 +18,10 @@ buddy executions:list --pipeline=<id>
 buddy executions:show <exec-id> --pipeline=<id>
 ```
 
+### Working from a URL
+
+When the user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent.
+
 ### 2. Get Failure Details
 ```bash
 # Show failed actions with logs

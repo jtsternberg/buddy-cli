@@ -5,12 +5,12 @@ Show current and recent pipeline execution status.
 ## Usage
 
 ```
-/buddy-cli:status [pipeline-name-or-id]
+/buddy-cli:status [pipeline-name-or-id-or-url]
 ```
 
 ## Arguments
 
-- `pipeline-name-or-id` - Filter to specific pipeline (optional)
+- `pipeline-name-or-id-or-url` - Pipeline name, numeric ID, or Buddy.works URL (optional). If a URL is given, parse it per the `buddy-cli:url-parser` agent.
 
 ## Instructions
 
@@ -44,7 +44,14 @@ Recent Executions:
 
 For running executions, show which action is currently executing.
 
+## URL Support
+
+If a Buddy.works URL is provided, parse it per the `buddy-cli:url-parser` agent.
+
 ## Example Interactions
+
+User: `/buddy-cli:status https://app.buddy.works/awesomemotive/lindris-frontend/pipelines/pipeline/506857`
+--> Parse URL, show status for pipeline 506857 in awesomemotive/lindris-frontend
 
 User: `/buddy-cli:status`
 → Show status for all pipelines with recent activity

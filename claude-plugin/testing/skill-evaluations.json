@@ -19,6 +19,16 @@
           "expected_commands": ["executions:list", "executions:show"]
         },
         {
+          "prompt": "Show me this execution: https://app.buddy.works/awesomemotive/lindris-frontend/pipelines/pipeline/506857/execution/698b463a",
+          "expected_behavior": "Parse URL to extract workspace=awesomemotive, project=lindris-frontend, pipeline=506857, execution=698b463a. Run executions:show with explicit -w and -p flags.",
+          "expected_commands": ["executions:show"]
+        },
+        {
+          "prompt": "What pipelines are in https://app.buddy.works/awesomemotive/lindris-frontend",
+          "expected_behavior": "Parse URL to extract workspace and project. List pipelines with explicit -w and -p flags.",
+          "expected_commands": ["pipelines:list"]
+        },
+        {
           "prompt": "Set up my buddy workspace to use my-workspace",
           "expected_behavior": "Configure workspace via config:set",
           "expected_commands": ["config:set"]
@@ -52,6 +62,11 @@
           "prompt": "Debug the test action that keeps timing out",
           "expected_behavior": "Get action logs, analyze timeout patterns, suggest fixes",
           "expected_commands": ["executions:show --logs", "actions:show"]
+        },
+        {
+          "prompt": "This build failed, help me fix it: https://app.buddy.works/awesomemotive/lindris-frontend/pipelines/pipeline/506857/execution/698b463a541a3b001b122b95?actionExecutionId=698b463a541a3b001b122bac",
+          "expected_behavior": "Parse URL to extract all components. Get execution details and failed action logs using explicit -w and -p flags.",
+          "expected_commands": ["executions:show", "executions:failed"]
         },
         {
           "prompt": "Check if authentication is configured correctly",

@@ -47,6 +47,7 @@ buddy vars:list [--pipeline=<id>]
 
 ## Guidelines
 
+- When users provide `app.buddy.works` URLs, parse them using the `buddy-cli:url-parser` agent.
 - Always use `--json` flag when parsing output programmatically
 - Check configuration before running commands (`buddy config:show`)
 - For failures, prioritize getting logs before suggesting fixes

@@ -22,6 +22,10 @@ export BUDDY_PROJECT=<name>    # or: buddy config:set project <name>
 
 Validate with: `${CLAUDE_PLUGIN_ROOT}/scripts/validate_config.sh`
 
+## Working with Buddy.works URLs
+
+When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent.
+
 ## Quick Reference
 
 ### Pipelines
