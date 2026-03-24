@@ -334,6 +334,68 @@ class PipelinesCommandsTest extends TestCase
         $this->assertSame('INPROGRESS', $data['status']);
     }
 
+    public function testPipelinesRetryResourceNotFoundSuggestsBranchRun(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->willReturn(['executions' => [
+                [
+                    'id' => 50,
+                    'status' => 'FAILED',
+                    'branch' => ['name' => 'jt/feature/my-branch'],
+                ],
+            ]]);
+
+        $this->mockBuddyService->method('retryExecution')
+            ->willThrowException(new \RuntimeException('Resource not found'));
+
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Retry failed: Resource not found', $output);
+        $this->assertStringContainsString('Last execution #50', $output);
+        $this->assertStringContainsString('FAILED', $output);
+        $this->assertStringContainsString('jt/feature/my-branch', $output);
+        $this->assertStringContainsString('pipelines:run 1 --branch=jt/feature/my-branch', $output);
+    }
+
+    public function testPipelinesRetryGenericErrorDoesNotSuggestBranch(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->willReturn(['executions' => [
+                [
+                    'id' => 50,
+                    'status' => 'FAILED',
+                    'branch' => ['name' => 'main'],
+                ],
+            ]]);
+
+        $this->mockBuddyService->method('retryExecution')
+            ->willThrowException(new \RuntimeException('Internal server error'));
+
+        $command = $this->app->find('pipelines:retry');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Retry failed: Internal server error', $output);
+        // Should NOT suggest branch run for non-"not found" errors
+        $this->assertStringNotContainsString('pipelines:run', $output);
+    }
+
     // pipelines:cancel tests
 
     public function testPipelinesCancelRequiresWorkspace(): void

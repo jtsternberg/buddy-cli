@@ -394,7 +394,7 @@ class ExecutionsCommandsTest extends TestCase
         $this->mockBuddyService->method('getActionExecution')
             ->willReturnCallback(function ($ws, $proj, $pipe, $exec, $actionId) {
                 if ($actionId === 1) {
-                    return ['log' => ['Compiling...', 'Error: compilation failed', 'exit code 1']];
+                    return ['log' => ['Compiling...', 'Error: compilation failed because of missing deps', 'exit code 1']];
                 }
                 return ['log' => ['Deploying...', 'npm ERR! network timeout']];
             });
@@ -418,6 +418,227 @@ class ExecutionsCommandsTest extends TestCase
         $this->assertStringContainsString('FAILED ACTIONS:', $output);
         $this->assertStringContainsString('Build (BUILD)', $output);
         $this->assertStringContainsString('Deploy (DEPLOY)', $output);
+    }
+
+    public function testExecutionsFailedAnalyzeDetectsHeapOverflow(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn([
+                'id' => 100,
+                'status' => 'FAILED',
+                'action_executions' => [
+                    [
+                        'action' => ['id' => 1, 'name' => 'Run NPM Build', 'type' => 'BUILD'],
+                        'status' => 'FAILED',
+                    ],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('getActionExecution')
+            ->willReturn(['log' => [
+                'npm ci',
+                'vite build',
+                'rendering chunks...',
+                'FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory',
+                '',
+            ]]);
+
+        $command = $this->app->find('executions:failed');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            '--analyze' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('ERROR SUMMARY', $output);
+        // Should detect specific heap/GC patterns, not generic "Error"
+        $this->assertMatchesRegularExpression('/(?:Heap Overflow|GC Exhaustion|JavaScript Heap Overflow)/', $output);
+        $this->assertStringContainsString('Run NPM Build', $output);
+    }
+
+    public function testExecutionsFailedAnalyzeUnidentifiedShowsRelevantLines(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn([
+                'id' => 100,
+                'status' => 'FAILED',
+                'action_executions' => [
+                    [
+                        'action' => ['id' => 1, 'name' => 'Mystery Action', 'type' => 'BUILD'],
+                        'status' => 'FAILED',
+                    ],
+                ],
+            ]);
+
+        // Log with no recognizable patterns but some keyword-bearing lines
+        $this->mockBuddyService->method('getActionExecution')
+            ->willReturn(['log' => [
+                'starting process...',
+                'step 1 ok',
+                'step 2 ok',
+                'step 3 ok',
+                'something went wrong with memory allocation',
+                'step 4 ok',
+                'step 5 ok',
+                'done',
+            ]]);
+
+        $command = $this->app->find('executions:failed');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            '--analyze' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Unidentified', $output);
+        // Should find the keyword-bearing line rather than just last 5 lines
+        $this->assertStringContainsString('memory allocation', $output);
+    }
+
+    // Hash-to-integer execution ID resolution tests
+
+    public function testExecutionsShowResolvesHashExecutionId(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn([
+                'executions' => [
+                    [
+                        'id' => 4099,
+                        'url' => 'https://api.buddy.works/workspaces/ws/projects/proj/pipelines/1/executions/4099',
+                        'html_url' => 'https://app.buddy.works/ws/proj/pipelines/pipeline/1/execution/69c2d8c162305ac4bd6107fb',
+                        'status' => 'FAILED',
+                    ],
+                    [
+                        'id' => 4098,
+                        'url' => 'https://api.buddy.works/workspaces/ws/projects/proj/pipelines/1/executions/4098',
+                        'html_url' => 'https://app.buddy.works/ws/proj/pipelines/pipeline/1/execution/abc123def456',
+                        'status' => 'SUCCESSFUL',
+                    ],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('getExecution')
+            ->with('ws', 'proj', 1, 4099)
+            ->willReturn([
+                'id' => 4099,
+                'status' => 'FAILED',
+                'branch' => ['name' => 'main'],
+                'to_revision' => ['revision' => 'abc123def456'],
+                'creator' => ['name' => 'Test'],
+                'action_executions' => [],
+            ]);
+
+        $command = $this->app->find('executions:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '69c2d8c162305ac4bd6107fb',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Resolving execution hash', $output);
+        $this->assertStringContainsString('Resolved to execution #4099', $output);
+        $this->assertStringContainsString('4099', $output);
+    }
+
+    public function testExecutionsShowNumericIdPassesThroughDirectly(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->with('ws', 'proj', 1, 100)
+            ->willReturn([
+                'id' => 100,
+                'status' => 'SUCCESSFUL',
+                'branch' => ['name' => 'main'],
+                'to_revision' => ['revision' => 'abc123'],
+                'creator' => ['name' => 'Test'],
+                'action_executions' => [],
+            ]);
+
+        $command = $this->app->find('executions:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        // Should NOT show "Resolving execution hash" for numeric IDs
+        $this->assertStringNotContainsString('Resolving execution hash', $tester->getDisplay());
+    }
+
+    public function testExecutionsShowUnresolvableHashThrowsError(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn(['executions' => [
+                [
+                    'id' => 100,
+                    'url' => 'https://api.buddy.works/workspaces/ws/projects/proj/pipelines/1/executions/100',
+                    'status' => 'SUCCESSFUL',
+                ],
+            ]]);
+
+        $command = $this->app->find('executions:show');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Could not resolve execution hash');
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => 'deadbeef12345678',
+        ]);
+    }
+
+    public function testExecutionsFailedResolvesHashExecutionId(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn([
+                'executions' => [
+                    [
+                        'id' => 4099,
+                        'url' => 'https://api.buddy.works/workspaces/ws/projects/proj/pipelines/1/executions/4099',
+                        'html_url' => 'https://app.buddy.works/ws/proj/pipelines/pipeline/1/execution/69c2d8c162305ac4bd6107fb',
+                        'status' => 'FAILED',
+                    ],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('getExecution')
+            ->with('ws', 'proj', 1, 4099)
+            ->willReturn([
+                'id' => 4099,
+                'status' => 'FAILED',
+                'action_executions' => [],
+            ]);
+
+        $command = $this->app->find('executions:failed');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '69c2d8c162305ac4bd6107fb',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Resolved to execution #4099', $output);
     }
 
     public function testExecutionsFailedJsonOutput(): void

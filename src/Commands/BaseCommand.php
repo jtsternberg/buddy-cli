@@ -127,8 +127,12 @@ abstract class BaseCommand extends Command
         $executions = $response['executions'] ?? [];
 
         foreach ($executions as $exec) {
-            $url = $exec['url'] ?? $exec['html_url'] ?? '';
-            if (str_contains($url, (string) $rawId)) {
+            // Check both API URL and HTML URL — the hash appears in html_url
+            $urls = implode(' ', array_filter([
+                $exec['url'] ?? '',
+                $exec['html_url'] ?? '',
+            ]));
+            if (str_contains($urls, (string) $rawId)) {
                 $resolvedId = (int) $exec['id'];
                 $output->writeln(sprintf('<info>Resolved to execution #%d</info>', $resolvedId));
                 return $resolvedId;
