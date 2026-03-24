@@ -103,6 +103,45 @@ abstract class BaseCommand extends Command
         return (int) $pipelineId;
     }
 
+    /**
+     * Resolve an execution ID that may be a hex hash (from Buddy URLs) to the
+     * integer ID the API expects. Passes through numeric IDs unchanged.
+     */
+    protected function resolveExecutionId(
+        InputInterface $input,
+        OutputInterface $output,
+        string $workspace,
+        string $project,
+        int $pipelineId
+    ): int {
+        $rawId = $input->getArgument('execution-id');
+
+        if (ctype_digit((string) $rawId)) {
+            return (int) $rawId;
+        }
+
+        // Non-numeric — likely a hex hash from a Buddy URL
+        $output->writeln(sprintf('<comment>Resolving execution hash "%s" to integer ID...</comment>', $rawId));
+
+        $response = $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, ['per_page' => 25]);
+        $executions = $response['executions'] ?? [];
+
+        foreach ($executions as $exec) {
+            $url = $exec['url'] ?? $exec['html_url'] ?? '';
+            if (str_contains($url, (string) $rawId)) {
+                $resolvedId = (int) $exec['id'];
+                $output->writeln(sprintf('<info>Resolved to execution #%d</info>', $resolvedId));
+                return $resolvedId;
+            }
+        }
+
+        throw new \RuntimeException(
+            "Could not resolve execution hash '{$rawId}' to an integer ID. "
+            . "Buddy URLs use hex hashes but the CLI needs integer IDs. "
+            . "Use 'buddy executions:list --pipeline={$pipelineId}' to find the correct ID."
+        );
+    }
+
     protected function preparePipelineData(array $config): array
     {
         $data = [];

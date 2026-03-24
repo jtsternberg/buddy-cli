@@ -48,7 +48,7 @@ HELP);
         $workspace = $this->requireWorkspace($input);
         $project = $this->requireProject($input);
         $pipelineId = $this->requirePipeline($input);
-        $executionId = (int) $input->getArgument('execution-id');
+        $executionId = $this->resolveExecutionId($input, $output, $workspace, $project, $pipelineId);
 
         $execution = $this->getBuddyService()->getExecution($workspace, $project, $pipelineId, $executionId);
 
