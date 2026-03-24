@@ -104,18 +104,18 @@ HELP);
     private function showLogs(OutputInterface $output, string $workspace, string $project, int $pipelineId, int $executionId, array $actionExecutions): void
     {
         foreach ($actionExecutions as $actionExec) {
-            $actionId = $actionExec['action']['id'] ?? null;
-            if ($actionId === null) {
+            $actionExecutionId = $actionExec['action_execution_id'] ?? null;
+            if ($actionExecutionId === null) {
                 continue;
             }
 
             try {
-                $actionDetails = $this->getBuddyService()->getActionExecution(
+                $actionDetails = $this->getBuddyService()->getActionExecutionByExecId(
                     $workspace,
                     $project,
                     $pipelineId,
                     $executionId,
-                    (int) $actionId
+                    $actionExecutionId
                 );
 
                 $logs = $actionDetails['log'] ?? [];
