@@ -48,12 +48,34 @@ HELP);
             return self::FAILURE;
         }
 
-        $execution = $this->getBuddyService()->retryExecution(
-            $workspace,
-            $project,
-            $pipelineId,
-            (int) $lastExecution['id']
-        );
+        try {
+            $execution = $this->getBuddyService()->retryExecution(
+                $workspace,
+                $project,
+                $pipelineId,
+                (int) $lastExecution['id']
+            );
+        } catch (\Exception $e) {
+            $message = $e->getMessage();
+            $lastStatus = $lastExecution['status'] ?? 'UNKNOWN';
+            $lastBranch = $lastExecution['branch']['name'] ?? 'unknown';
+
+            $output->writeln(sprintf('<error>Retry failed: %s</error>', $message));
+            $output->writeln('');
+            $output->writeln(sprintf(
+                '<comment>Last execution #%s (%s) on branch: %s</comment>',
+                $lastExecution['id'],
+                $lastStatus,
+                $lastBranch
+            ));
+
+            if (str_contains($message, 'not found') || str_contains($message, 'Resource not found')) {
+                $output->writeln('<comment>This pipeline may use wildcards. Try running with an explicit branch:</comment>');
+                $output->writeln(sprintf('  buddy pipelines:run %d --branch=%s', $pipelineId, $lastBranch));
+            }
+
+            return self::FAILURE;
+        }
 
         if ($this->isJsonOutput($input)) {
             $this->outputJson($output, $execution);
