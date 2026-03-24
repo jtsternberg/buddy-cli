@@ -345,9 +345,10 @@ class ExecutionsCommandsTest extends TestCase
                 'id' => 100,
                 'status' => 'FAILED',
                 'action_executions' => [
-                    ['action' => ['id' => 1, 'name' => 'Build'], 'status' => 'SUCCESSFUL'],
+                    ['action' => ['id' => 1, 'name' => 'Build'], 'action_execution_id' => 'aaa111', 'status' => 'SUCCESSFUL'],
                     [
                         'action' => ['id' => 2, 'name' => 'Deploy', 'type' => 'DEPLOY'],
+                        'action_execution_id' => 'bbb222',
                         'status' => 'FAILED',
                         'start_date' => '2024-01-15T10:00:00Z',
                         'finish_date' => '2024-01-15T10:05:00Z',
@@ -355,7 +356,7 @@ class ExecutionsCommandsTest extends TestCase
                 ],
             ]);
 
-        $this->mockBuddyService->method('getActionExecution')
+        $this->mockBuddyService->method('getActionExecutionByExecId')
             ->willReturn(['log' => ['Deploying...', 'Error: connection refused']]);
 
         $command = $this->app->find('executions:failed');
@@ -382,18 +383,20 @@ class ExecutionsCommandsTest extends TestCase
                 'action_executions' => [
                     [
                         'action' => ['id' => 1, 'name' => 'Build', 'type' => 'BUILD'],
+                        'action_execution_id' => 'aaa111',
                         'status' => 'FAILED',
                     ],
                     [
                         'action' => ['id' => 2, 'name' => 'Deploy', 'type' => 'DEPLOY'],
+                        'action_execution_id' => 'bbb222',
                         'status' => 'FAILED',
                     ],
                 ],
             ]);
 
-        $this->mockBuddyService->method('getActionExecution')
-            ->willReturnCallback(function ($ws, $proj, $pipe, $exec, $actionId) {
-                if ($actionId === 1) {
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->willReturnCallback(function ($ws, $proj, $pipe, $exec, $actionExecId) {
+                if ($actionExecId === 'aaa111') {
                     return ['log' => ['Compiling...', 'Error: compilation failed because of missing deps', 'exit code 1']];
                 }
                 return ['log' => ['Deploying...', 'npm ERR! network timeout']];
@@ -429,12 +432,13 @@ class ExecutionsCommandsTest extends TestCase
                 'action_executions' => [
                     [
                         'action' => ['id' => 1, 'name' => 'Run NPM Build', 'type' => 'BUILD'],
+                        'action_execution_id' => 'aaa111',
                         'status' => 'FAILED',
                     ],
                 ],
             ]);
 
-        $this->mockBuddyService->method('getActionExecution')
+        $this->mockBuddyService->method('getActionExecutionByExecId')
             ->willReturn(['log' => [
                 'npm ci',
                 'vite build',
@@ -470,13 +474,14 @@ class ExecutionsCommandsTest extends TestCase
                 'action_executions' => [
                     [
                         'action' => ['id' => 1, 'name' => 'Mystery Action', 'type' => 'BUILD'],
+                        'action_execution_id' => 'aaa111',
                         'status' => 'FAILED',
                     ],
                 ],
             ]);
 
         // Log with no recognizable patterns but some keyword-bearing lines
-        $this->mockBuddyService->method('getActionExecution')
+        $this->mockBuddyService->method('getActionExecutionByExecId')
             ->willReturn(['log' => [
                 'starting process...',
                 'step 1 ok',
