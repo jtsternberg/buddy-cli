@@ -171,7 +171,10 @@ buddy vars:set KEY val --project=foo
 buddy vars:set KEY val                    # workspace scope (default)
 ```
 
-**No `--action` flag:** Action-level variables must be set via the Buddy web UI or pipeline YAML config.
+**Action-level variables:** Use `--action=<id>` with `--pipeline=<id>` to scope to a specific action:
+```bash
+buddy vars:set --pipeline=123 --action=456 -- KEY "value"
+```
 
 ### vars:delete
 Delete a variable.

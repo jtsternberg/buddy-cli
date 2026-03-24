@@ -26,6 +26,7 @@ exists at the same scope, it will be updated; otherwise a new one is created.
 Options:
   -p, --project      Scope to a specific project
       --pipeline     Scope to a specific pipeline ID
+      --action       Scope to a specific action ID (requires --pipeline)
   -t, --type         Variable type: VAR (default), SSH_KEY, SSH_PUBLIC_KEY
   -e, --encrypted    Encrypt the value (cannot be read back)
   -s, --settable     Allow value override during manual pipeline run
@@ -52,6 +53,7 @@ HELP);
         $this->addWorkspaceOption();
         $this->addOption('project', 'p', InputOption::VALUE_REQUIRED, 'Scope to project');
         $this->addOption('pipeline', null, InputOption::VALUE_REQUIRED, 'Scope to pipeline ID');
+        $this->addOption('action', null, InputOption::VALUE_REQUIRED, 'Scope to action ID (requires --pipeline)');
         $this->addOption('type', 't', InputOption::VALUE_REQUIRED, 'Variable type: VAR, SSH_KEY, SSH_PUBLIC_KEY', 'VAR');
         $this->addOption('encrypted', 'e', InputOption::VALUE_NONE, 'Encrypt the variable value');
         $this->addOption('settable', 's', InputOption::VALUE_NONE, 'Allow value to be set during manual run');
@@ -81,12 +83,18 @@ HELP);
             $data['description'] = $input->getOption('description');
         }
 
-        // Validate scope — only one allowed
+        // Validate scope — only one allowed (action requires pipeline, so those pair together)
         $hasProject = $input->getOption('project') !== null;
         $hasPipeline = $input->getOption('pipeline') !== null;
+        $hasAction = $input->getOption('action') !== null;
 
-        if ($hasProject && $hasPipeline) {
-            $output->writeln('<error>Only one scope allowed. Use --project OR --pipeline, not both.</error>');
+        if ($hasAction && !$hasPipeline) {
+            $output->writeln('<error>--action requires --pipeline. An action belongs to a specific pipeline.</error>');
+            return self::FAILURE;
+        }
+
+        if ($hasProject && ($hasPipeline || $hasAction)) {
+            $output->writeln('<error>Only one scope allowed. Use --project OR --pipeline/--action, not both.</error>');
             $output->writeln('<comment>Scope hierarchy: action > pipeline > project > workspace</comment>');
             return self::FAILURE;
         }
@@ -98,6 +106,9 @@ HELP);
         if ($hasPipeline) {
             $data['pipeline'] = ['id' => (int) $input->getOption('pipeline')];
         }
+        if ($hasAction) {
+            $data['action'] = ['id' => (int) $input->getOption('action')];
+        }
 
         // Try to find existing variable by key
         $filters = [];
@@ -106,6 +117,9 @@ HELP);
         }
         if (isset($data['pipeline'])) {
             $filters['pipelineId'] = $data['pipeline']['id'];
+        }
+        if (isset($data['action'])) {
+            $filters['actionId'] = $data['action']['id'];
         }
 
         $existingId = $this->findVariableByKey($workspace, $key, $filters);
