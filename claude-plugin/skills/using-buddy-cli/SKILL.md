@@ -24,9 +24,17 @@ Validate with: `${CLAUDE_PLUGIN_ROOT}/scripts/validate_config.sh`
 
 ## Working with Buddy.works URLs
 
-When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent.
+When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent. URL execution IDs are hex hashes — the agent resolves them to the integer IDs the CLI expects.
 
 ## Quick Reference
+
+### Troubleshooting (most important for failures)
+```bash
+buddy executions:failed <id> --pipeline=<id>            # Failed action logs
+buddy executions:show <id> --pipeline=<id> --logs       # ALL action logs
+buddy executions:failed <id> --pipeline=<id> --analyze  # Error pattern analysis
+buddy executions:show <id> --pipeline=<id> --summary    # Compact status overview
+```
 
 ### Pipelines
 ```bash
@@ -34,16 +42,15 @@ buddy pipelines:list                    # List all pipelines
 buddy pipelines:show <id>               # Show pipeline details
 buddy pipelines:run <id>                # Run a pipeline
 buddy pipelines:run <id> --wait         # Run and wait for completion
+buddy pipelines:run <id> --branch=<b>   # Run wildcard pipeline on branch
 buddy pipelines:retry <id>              # Retry last failed execution
 buddy pipelines:cancel <id>             # Cancel running execution
 ```
 
 ### Executions
 ```bash
-buddy executions:list --pipeline=<id>   # List recent executions
-buddy executions:show <id> --pipeline=<id>           # Show execution details
-buddy executions:show <id> --pipeline=<id> --logs    # Include action logs
-buddy executions:failed <id> --pipeline=<id>         # Show failed action details
+buddy executions:list --pipeline=<id>              # List recent executions
+buddy executions:show <id> --pipeline=<id>         # Show execution details
 ```
 
 ### Configuration
