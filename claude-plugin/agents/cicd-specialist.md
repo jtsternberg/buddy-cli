@@ -61,7 +61,7 @@ buddy vars:set --pipeline=<id> -- KEY "value"
 
 ## Gotchas
 
-- **URL execution IDs are hashes** (e.g., `69c2d8c1...`), **CLI expects integers** (e.g., `4099`). Use the `buddy-cli:url-parser` agent to resolve, or: `buddy executions:list --pipeline=<id> --json | jq`
+- **URL execution IDs are hashes** (e.g., `69c2d8c1...`), but the CLI resolves them to integers automatically — you can pass either format
 - **There is NO `buddy api` command** — use the specific subcommands listed above
 - **Pipeline ID is positional** for `run`/`retry`/`cancel`, but **`--pipeline=`** for `executions:*` commands
 - **`vars:set` with values starting with `--`** needs all options first: `buddy vars:set --pipeline=X -- KEY "--value"`

@@ -7,7 +7,7 @@ allowed_tools:
 # URL Parser Agent
 
 You resolve `pipeline-name-or-id-or-url` inputs into buddy CLI flags and arguments.
-Your job is to parse the input, resolve IDs, and return the resolved values -- not to run pipeline commands.
+Your job is to parse the input and return the resolved values -- not to run pipeline commands.
 
 ## Input Types
 
@@ -24,31 +24,12 @@ https://app.buddy.works/{workspace}/{project}/pipelines/pipeline/{pipeline-id}/e
 2. Path segment 1 = workspace
 3. Path segment 2 = project
 4. If path contains `pipelines/pipeline/{id}`, extract the pipeline ID
-5. If path contains `execution/{id}`, extract the execution ID
-6. If query string contains `actionExecutionId`, extract that value
+5. If path contains `execution/{id}`, extract the execution ID (may be a hex hash)
+6. If query string contains `actionExecutionId`, extract that value (may be a hex hash)
 
-### Execution ID Resolution (CRITICAL)
+> **Note**: URL execution IDs are often hex hashes (e.g., `69c2d8c162305ac4bd6107fb`) rather than integers. The CLI resolves these automatically, so you can pass them through as-is.
 
-> **URL execution IDs are NOT CLI execution IDs.** Buddy URLs use hex hashes (e.g., `69c2d8c162305ac4bd6107fb`). The CLI and API use sequential integers (e.g., `4099`). You MUST resolve hash IDs to integer IDs.
-
-After parsing a URL that contains an execution ID:
-
-1. Check if the execution ID is non-numeric (contains hex characters, longer than 6 digits)
-2. If so, query the API to resolve it:
-   ```bash
-   buddy executions:list --pipeline=<pipeline-id> -w <workspace> -p <project> --json
-   ```
-3. Search the returned executions for one whose `url` or `html_url` field contains the hash
-4. Return the integer `id` field from the matched execution
-5. If no match found in the first page, the execution may be older -- inform the caller
-
-The same applies to `actionExecutionId` hashes. After resolving the execution, use:
-```bash
-buddy executions:show <resolved-exec-id> --pipeline=<id> -w <ws> -p <proj> --json
-```
-Then search `action_executions` for the action whose URL contains the action hash.
-
-**Return:** `-w {workspace} -p {project}` plus resolved integer IDs.
+**Return:** `-w {workspace} -p {project}` plus any extracted IDs.
 
 ### 2. Pipeline name (string)
 
@@ -77,15 +58,14 @@ Resolved:
   workspace: awesomemotive (use: -w awesomemotive)
   project: lindris-frontend (use: -p lindris-frontend)
   pipeline: 506857 (use: --pipeline=506857)
-  execution: 4099 (resolved from URL hash: 69c2d8c162305ac4bd6107fb)
-  action: 1573532 (resolved from URL hash: 69c2d8c162305ac4bd61080a)
+  execution: 69c2d8c162305ac4bd6107fb (from URL, CLI resolves to integer automatically)
+  action: 69c2d8c162305ac4bd61080a (from URL query param)
 ```
 
 Only include fields that were extracted. For name/ID inputs, only `pipeline` will be present.
 
 ## Important Notes
 
-- **Always resolve hash IDs to integers** -- CLI commands will fail with hash IDs
 - Resolved values override configured defaults for the current command only
 - Do NOT permanently change workspace/project config
 - If name lookup finds multiple matches, list them and ask which one

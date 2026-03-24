@@ -31,9 +31,9 @@ buddy executions:show <exec-id> --pipeline=<id> --summary
 
 ### From a URL
 
-When the user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent.
+When the user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent to extract workspace, project, pipeline, and execution IDs.
 
-> **CRITICAL**: URL execution IDs are hex hashes (e.g., `69c2d8c162305ac4bd6107fb`). The CLI requires integer IDs (e.g., `4099`). The url-parser agent resolves these automatically. Do NOT pass hash IDs to CLI commands.
+> **Note**: URL execution IDs are hex hashes (e.g., `69c2d8c162305ac4bd6107fb`). The CLI resolves these to integer IDs automatically — you can pass either format.
 
 ### From the pipeline
 

@@ -24,7 +24,7 @@ Validate with: `${CLAUDE_PLUGIN_ROOT}/scripts/validate_config.sh`
 
 ## Working with Buddy.works URLs
 
-When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent. URL execution IDs are hex hashes — the agent resolves them to the integer IDs the CLI expects.
+When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent to extract workspace, project, pipeline, and execution IDs. The CLI accepts both hash and integer execution IDs.
 
 ## Quick Reference
 
