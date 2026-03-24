@@ -1087,4 +1087,20 @@ class ExecutionsCommandsTest extends TestCase
         // Should not crash, just skip logs for actions without execution ID
         $this->assertStringNotContainsString('Logs:', $tester->getDisplay());
     }
+
+    public function testExecutionsActionLogsRejectsNonHexId(): void
+    {
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Invalid action-execution-id');
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            'action-execution-id' => 'not-a-hex-string!',
+        ]);
+    }
 }
