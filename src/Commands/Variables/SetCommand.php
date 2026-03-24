@@ -34,11 +34,19 @@ Options:
 Scope hierarchy (most specific wins):
   action > pipeline > project > workspace
 
+Only ONE scope is allowed per variable (project OR pipeline, not both).
+If no scope is given, the variable is workspace-scoped.
+
+Values containing dashes (like --max-old-space-size=4096) require placing
+all options BEFORE the -- separator:
+  buddy vars:set --pipeline=12345 -- NODE_OPTIONS "--max-old-space-size=4096"
+
 Examples:
   buddy vars:set API_KEY "secret123" --encrypted
   buddy vars:set NODE_ENV production --project=my-project
   buddy vars:set DEBUG true --pipeline=12345 --settable
   buddy vars:set DEPLOY_KEY "..." --type=SSH_KEY --encrypted
+  buddy vars:set --pipeline=12345 -- NODE_OPTIONS "--max-old-space-size=4096"
 HELP);
 
         $this->addWorkspaceOption();
@@ -73,11 +81,21 @@ HELP);
             $data['description'] = $input->getOption('description');
         }
 
+        // Validate scope — only one allowed
+        $hasProject = $input->getOption('project') !== null;
+        $hasPipeline = $input->getOption('pipeline') !== null;
+
+        if ($hasProject && $hasPipeline) {
+            $output->writeln('<error>Only one scope allowed. Use --project OR --pipeline, not both.</error>');
+            $output->writeln('<comment>Scope hierarchy: action > pipeline > project > workspace</comment>');
+            return self::FAILURE;
+        }
+
         // Add scoping
-        if ($input->getOption('project') !== null) {
+        if ($hasProject) {
             $data['project'] = ['name' => $input->getOption('project')];
         }
-        if ($input->getOption('pipeline') !== null) {
+        if ($hasPipeline) {
             $data['pipeline'] = ['id' => (int) $input->getOption('pipeline')];
         }
 
