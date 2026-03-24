@@ -9,6 +9,7 @@ PHP CLI tool for Buddy.works CI/CD pipelines, built on `buddy-works/buddy-works-
 ## Special Instructions
 
 - **Use 'bd' for task tracking**
+- **Test-Driven Development (TDD)** — For new behavior and bugfixes, write or update a failing test first, implement the smallest change that makes it pass, then refactor. Do not add production code without a test that defines the expected behavior (unless the user explicitly asks otherwise).
 
 ## Commands
 
