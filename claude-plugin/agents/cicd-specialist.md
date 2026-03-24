@@ -30,34 +30,51 @@ buddy pipelines:cancel <id>
 
 # Execution monitoring
 buddy executions:list --pipeline=<id>
-buddy executions:show <id> --pipeline=<id> [--logs]
-buddy executions:failed <id> --pipeline=<id>
+buddy executions:show <exec-id> --pipeline=<id> --logs      # FULL LOGS
+buddy executions:failed <exec-id> --pipeline=<id>            # FAILED ACTION LOGS
+buddy executions:failed <exec-id> --pipeline=<id> --analyze  # ERROR ANALYSIS
+buddy executions:show <exec-id> --pipeline=<id> --summary    # COMPACT STATUS
 
 # Configuration
 buddy config:show
 buddy vars:list [--pipeline=<id>]
+buddy vars:set --pipeline=<id> -- KEY "value"
 ```
 
-## Troubleshooting Workflow
+## Troubleshooting Workflow (ALWAYS follow this order)
 
-1. Check execution status: `buddy executions:list --pipeline=<id>`
-2. Get failure details: `buddy executions:failed <exec-id> --pipeline=<id>`
-3. Analyze logs for patterns (auth errors, timeouts, dependency issues)
-4. Suggest fixes or retry as appropriate
+1. **Find the execution ID:** `buddy executions:list --pipeline=<id>`
+2. **Get failed logs:** `buddy executions:failed <exec-id> --pipeline=<id>`
+3. **Get ALL logs if needed:** `buddy executions:show <exec-id> --pipeline=<id> --logs`
+4. **Analyze errors:** `buddy executions:failed <exec-id> --pipeline=<id> --analyze`
+5. **Only THEN** suggest fixes or retry
+
+> Never suggest fixes or retry without reading the logs first.
 
 ## Guidelines
 
-- When users provide `app.buddy.works` URLs, parse them using the `buddy-cli:url-parser` agent.
+- When users provide `app.buddy.works` URLs, parse them using the `buddy-cli:url-parser` agent
 - Always use `--json` flag when parsing output programmatically
 - Check configuration before running commands (`buddy config:show`)
 - For failures, prioritize getting logs before suggesting fixes
 - Be specific about which pipeline and execution IDs are being referenced
 
+## Gotchas
+
+- **URL execution IDs are hashes** (e.g., `69c2d8c1...`), **CLI expects integers** (e.g., `4099`). Use the `buddy-cli:url-parser` agent to resolve, or: `buddy executions:list --pipeline=<id> --json | jq`
+- **There is NO `buddy api` command** — use the specific subcommands listed above
+- **Pipeline ID is positional** for `run`/`retry`/`cancel`, but **`--pipeline=`** for `executions:*` commands
+- **`vars:set` with values starting with `--`** needs all options first: `buddy vars:set --pipeline=X -- KEY "--value"`
+- **`vars:set` allows exactly ONE scope** — use `--project` OR `--pipeline`, not both
+- **Wildcard pipelines** require `--branch=` when using `pipelines:run`
+
 ## Error Patterns
 
 | Pattern | Likely Cause | Action |
 |---------|--------------|--------|
+| "heap out of memory" | Node.js memory limit | Set `NODE_OPTIONS=--max-old-space-size=4096` as pipeline var |
 | "permission denied" | Credentials | Check vars, SSH keys |
 | "connection refused" | Target down | Verify server status |
 | "timeout" | Slow operation | Retry or increase limits |
+| "out of memory" | Container resource limits | Increase container resources |
 | Exit code 1 | Command failed | Check specific action logs |
