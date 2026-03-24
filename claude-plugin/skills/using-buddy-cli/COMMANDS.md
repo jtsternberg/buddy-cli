@@ -76,9 +76,12 @@ buddy executions:list --pipeline=<pipeline-id>
 Show execution details.
 ```bash
 buddy executions:show <exec-id> --pipeline=<pipeline-id>
-buddy executions:show <exec-id> --pipeline=<pipeline-id> --logs
-buddy executions:show <exec-id> --pipeline=<pipeline-id> --summary  # Compact status view
+buddy executions:show <exec-id> --pipeline=<pipeline-id> --logs      # Full logs for all actions
+buddy executions:show <exec-id> --pipeline=<pipeline-id> --logs -v   # Show errors for skipped actions
+buddy executions:show <exec-id> --pipeline=<pipeline-id> --summary   # Compact status view
 ```
+
+`--logs` fetches each action's logs sequentially (shows progress indicator). Use `-v` to surface errors when individual log fetches fail (rate limits, permissions, etc.) instead of silently skipping.
 
 ### executions:failed
 Show failed action details with logs.
@@ -86,6 +89,24 @@ Show failed action details with logs.
 buddy executions:failed <exec-id> --pipeline=<pipeline-id>
 buddy executions:failed <exec-id> --pipeline=<pipeline-id> --analyze  # Categorize errors
 ```
+
+### executions:actions
+List all action executions with their `action_execution_id`, status, and duration.
+```bash
+buddy executions:actions <exec-id> --pipeline=<pipeline-id>
+buddy executions:actions <exec-id> --pipeline=<pipeline-id> --json
+```
+
+Use this to find the `action_execution_id` needed by `executions:action-logs`. Accepts hex execution IDs from Buddy URLs.
+
+### executions:action-logs
+Fetch full log output for a specific action execution.
+```bash
+buddy executions:action-logs <exec-id> <action-execution-id> --pipeline=<pipeline-id>
+buddy executions:action-logs <exec-id> <action-execution-id> --pipeline=<pipeline-id> --json
+```
+
+The `action-execution-id` is a hex string from `executions:actions` output. More targeted than `--logs` (single API call vs N calls). Accepts hex execution IDs from Buddy URLs.
 
 ## Action Commands
 
