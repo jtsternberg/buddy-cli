@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `executions:actions` command — lists all action executions with their `action_execution_id`, status, and duration
+- `executions:action-logs` command — fetches full log output for a specific action by its per-run hex ID
+- `getActionExecutionByExecId()` API method using the per-run `/action_executions/:id` endpoint that returns logs for all action types including SSH_COMMAND
+- Progress indicator for `executions:show --logs` showing `Fetching logs (3/18): Action Name...`
+- Verbose mode (`-v`) for `executions:show --logs` surfaces errors when individual action log fetches fail
+- Hex format validation on `action-execution-id` argument with helpful error message
+- 17 new integration tests for both new commands and the `--logs` fix
+- Skill documentation for new commands (COMMANDS.md, WORKFLOWS.md, troubleshooting skill)
+
+### Fixed
+
+- `executions:show --logs` now returns log output for SSH_COMMAND type actions (DB migrations, artisan commands) — previously returned empty
+- `executions:failed` and `executions:failed --analyze` now use per-run `action_execution_id` instead of static `action.id`, fixing the same SSH_COMMAND log gap
+
+### Changed
+
+- `ShowCommand::showLogs()` and `FailedCommand` switched from `/actions/:action_id` endpoint to `/action_executions/:action_execution_id` endpoint
+- Empty-state message in `ActionsCommand` now uses `<comment>` tags for pattern consistency
+
 ## [1.3.0] - 2026-03-24
 
 ### Added
