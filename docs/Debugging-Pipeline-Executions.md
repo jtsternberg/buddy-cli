@@ -189,7 +189,10 @@ The retry preserves all original variables and settings.
 | `buddy pipelines:run <id> --branch=<name>` | Run pipeline on a branch |
 | `buddy pipelines:run <id> --var="KEY=value"` | Run with custom variables |
 | `buddy executions:show <id> --logs` | View execution with action logs |
+| `buddy executions:show <id> --logs -v` | Same, but surface skipped-action errors |
 | `buddy executions:failed <id>` | Show failed actions with logs |
+| `buddy executions:actions <id>` | List actions with their execution IDs |
+| `buddy executions:action-logs <id> <action-exec-id>` | Logs for a specific action |
 | `buddy pipelines:retry <id>` | Retry the last failed execution |
 
 ## Tips

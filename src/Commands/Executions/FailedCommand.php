@@ -84,16 +84,16 @@ HELP);
 
             TableFormatter::keyValue($output, $data);
 
-            // Fetch action details with logs
-            $actionId = $actionExec['action']['id'] ?? null;
-            if ($actionId !== null) {
+            // Fetch action details with logs using per-run action_execution_id
+            $actionExecutionId = $actionExec['action_execution_id'] ?? null;
+            if ($actionExecutionId !== null) {
                 try {
-                    $actionDetails = $this->getBuddyService()->getActionExecution(
+                    $actionDetails = $this->getBuddyService()->getActionExecutionByExecId(
                         $workspace,
                         $project,
                         $pipelineId,
                         $executionId,
-                        (int) $actionId
+                        $actionExecutionId
                     );
 
                     $logs = $actionDetails['log'] ?? [];
@@ -119,23 +119,23 @@ HELP);
 
         foreach ($failedActions as $action) {
             $actionName = $action['action']['name'] ?? 'Unknown';
-            $actionId = $action['action']['id'] ?? null;
+            $actionExecutionId = $action['action_execution_id'] ?? null;
 
-            if ($actionId === null) {
+            if ($actionExecutionId === null) {
                 $allErrors['No Logs'][] = [
                     'action' => $actionName,
-                    'detail' => 'Action failed but no action ID available',
+                    'detail' => 'Action failed but no action_execution_id available',
                 ];
                 continue;
             }
 
             try {
-                $actionDetails = $this->getBuddyService()->getActionExecution(
+                $actionDetails = $this->getBuddyService()->getActionExecutionByExecId(
                     $workspace,
                     $project,
                     $pipelineId,
                     $executionId,
-                    (int) $actionId
+                    $actionExecutionId
                 );
                 $log = $actionDetails['log'] ?? [];
             } catch (\Exception $e) {

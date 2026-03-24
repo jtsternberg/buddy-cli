@@ -32,8 +32,11 @@ When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser
 ```bash
 buddy executions:failed <id> --pipeline=<id>            # Failed action logs
 buddy executions:show <id> --pipeline=<id> --logs       # ALL action logs
+buddy executions:show <id> --pipeline=<id> --logs -v    # Same, surface skipped errors
 buddy executions:failed <id> --pipeline=<id> --analyze  # Error pattern analysis
 buddy executions:show <id> --pipeline=<id> --summary    # Compact status overview
+buddy executions:actions <id> --pipeline=<id>            # List actions with execution IDs
+buddy executions:action-logs <id> <action-exec-id> --pipeline=<id>  # One action's logs
 ```
 
 ### Pipelines

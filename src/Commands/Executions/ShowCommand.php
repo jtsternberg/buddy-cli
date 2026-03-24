@@ -103,19 +103,26 @@ HELP);
 
     private function showLogs(OutputInterface $output, string $workspace, string $project, int $pipelineId, int $executionId, array $actionExecutions): void
     {
+        $total = count($actionExecutions);
+        $current = 0;
+
         foreach ($actionExecutions as $actionExec) {
-            $actionId = $actionExec['action']['id'] ?? null;
-            if ($actionId === null) {
+            $current++;
+            $actionExecutionId = $actionExec['action_execution_id'] ?? null;
+            if ($actionExecutionId === null) {
                 continue;
             }
 
+            $actionName = $actionExec['action']['name'] ?? 'Unknown';
+            $output->write(sprintf("\r<info>Fetching logs (%d/%d): %s...</info>", $current, $total, $actionName), false, OutputInterface::VERBOSITY_NORMAL);
+
             try {
-                $actionDetails = $this->getBuddyService()->getActionExecution(
+                $actionDetails = $this->getBuddyService()->getActionExecutionByExecId(
                     $workspace,
                     $project,
                     $pipelineId,
                     $executionId,
-                    (int) $actionId
+                    $actionExecutionId
                 );
 
                 $logs = $actionDetails['log'] ?? [];
@@ -123,15 +130,26 @@ HELP);
                     continue;
                 }
 
-                $output->writeln('');
-                $output->writeln(sprintf('<comment>--- Logs: %s ---</comment>', $actionExec['action']['name'] ?? 'Unknown'));
+                // Clear progress line before printing logs
+                $output->write("\r" . str_repeat(' ', 80) . "\r");
+                $output->writeln(sprintf('<comment>--- Logs: %s ---</comment>', $actionName));
                 foreach ($logs as $line) {
                     $output->writeln($line);
                 }
             } catch (\Exception $e) {
-                // Skip actions where we can't fetch logs
+                if ($output->isVerbose()) {
+                    $output->write("\r" . str_repeat(' ', 80) . "\r");
+                    $output->writeln(sprintf(
+                        '<fg=yellow>  [skipped] Could not fetch logs for %s: %s</>',
+                        $actionName,
+                        $e->getMessage()
+                    ));
+                }
             }
         }
+
+        // Clear any remaining progress line
+        $output->write("\r" . str_repeat(' ', 80) . "\r");
     }
 
     private function outputSummary(OutputInterface $output, array $execution): void

@@ -15,6 +15,8 @@ use BuddyCli\Commands\Config\ClearCommand as ConfigClearCommand;
 use BuddyCli\Commands\Config\SetCommand as ConfigSetCommand;
 use BuddyCli\Commands\Config\ShowCommand as ConfigShowCommand;
 use BuddyCli\Commands\Config\ValidateCommand as ConfigValidateCommand;
+use BuddyCli\Commands\Executions\ActionLogsCommand;
+use BuddyCli\Commands\Executions\ActionsCommand as ExecutionsActionsCommand;
 use BuddyCli\Commands\Executions\FailedCommand;
 use BuddyCli\Commands\Executions\ListCommand as ExecutionsListCommand;
 use BuddyCli\Commands\Executions\ShowCommand as ExecutionsShowCommand;
@@ -45,7 +47,7 @@ use Symfony\Component\Console\Application as ConsoleApplication;
 
 class Application extends ConsoleApplication
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.4.0';
 
     private ConfigService $configService;
     private ?BuddyService $buddyService = null;
@@ -110,6 +112,8 @@ class Application extends ConsoleApplication
         $this->addCommand(new ExecutionsListCommand($this));
         $this->addCommand(new ExecutionsShowCommand($this));
         $this->addCommand(new FailedCommand($this));
+        $this->addCommand(new ExecutionsActionsCommand($this));
+        $this->addCommand(new ActionLogsCommand($this));
 
         // Action commands
         $this->addCommand(new ActionsListCommand($this));

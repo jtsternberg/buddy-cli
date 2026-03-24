@@ -19,13 +19,20 @@ buddy executions:failed <exec-id> --pipeline=<id>
 
 # ALL action logs (when you need full context)
 buddy executions:show <exec-id> --pipeline=<id> --logs
+buddy executions:show <exec-id> --pipeline=<id> --logs -v  # Surface errors for skipped actions
 
 # Error pattern analysis
 buddy executions:failed <exec-id> --pipeline=<id> --analyze
 
 # Compact status overview
 buddy executions:show <exec-id> --pipeline=<id> --summary
+
+# Targeted: list actions to find action_execution_id, then fetch one action's logs
+buddy executions:actions <exec-id> --pipeline=<id>
+buddy executions:action-logs <exec-id> <action-execution-id> --pipeline=<id>
 ```
+
+> **Tip**: For targeted debugging, use `executions:actions` to find the specific action's hex ID, then `executions:action-logs` to fetch just that one action's logs. Faster than `--logs` which fetches all actions sequentially.
 
 ## Finding the Execution ID
 

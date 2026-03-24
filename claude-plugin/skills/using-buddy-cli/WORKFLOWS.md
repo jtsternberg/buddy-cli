@@ -56,6 +56,20 @@ buddy executions:show <exec-id> --pipeline=<id> --logs
 buddy pipelines:retry <id>
 ```
 
+## Debug a Specific Action
+
+When you know which action you care about, skip the full `--logs` fetch:
+
+```bash
+# 1. List actions to find the one you want
+buddy executions:actions <exec-id> --pipeline=<id>
+
+# 2. Grab the action_execution_id from the table, fetch its logs
+buddy executions:action-logs <exec-id> <action-execution-id> --pipeline=<id>
+```
+
+This makes a single API call instead of fetching logs for every action sequentially.
+
 ## Branch Deployment
 
 ```bash

@@ -183,10 +183,30 @@ class BuddyService
         );
     }
 
+    /**
+     * Get action details using the static action definition ID (integer).
+     *
+     * The $actionId is the same number every time that action runs. Does NOT return
+     * log output for SSH_COMMAND type actions; use getActionExecutionByExecId() for those.
+     */
     public function getActionExecution(string $workspace, string $projectName, int $pipelineId, int $executionId, int $actionId): array
     {
         return $this->withAutoRefresh(
             fn () => $this->buddy->getApiExecutions()->getActionExecution($workspace, $projectName, $pipelineId, $executionId, $actionId)->getBody()
+        );
+    }
+
+    /**
+     * Get action details using the per-run action_execution_id (hex string).
+     *
+     * The $actionExecutionId is unique to each individual run of an action — it's the
+     * hex value visible in Buddy URLs as the actionExecutionId query param. Returns log
+     * output for all action types including SSH_COMMAND.
+     */
+    public function getActionExecutionByExecId(string $workspace, string $projectName, int $pipelineId, int $executionId, string $actionExecutionId): array
+    {
+        return $this->withAutoRefresh(
+            fn () => $this->buddy->getApiExecutions()->getActionExecutionByExecId($workspace, $projectName, $pipelineId, $executionId, $actionExecutionId)->getBody()
         );
     }
 
