@@ -142,8 +142,36 @@ Create or update a variable.
 ```bash
 buddy vars:set KEY value
 buddy vars:set KEY value --project=<name>
+buddy vars:set KEY value --pipeline=<pipeline-id>
 buddy vars:set KEY value --encrypted
 ```
+
+**Gotchas:**
+
+**Values containing `--` (e.g., Node.js flags):**
+Symfony Console parses `--max-old-space-size` as a CLI flag. All options MUST come BEFORE the `--` separator:
+```bash
+# WRONG - value gets parsed as a flag:
+buddy vars:set NODE_OPTIONS "--max-old-space-size=4096" --pipeline=12345
+
+# RIGHT - options first, then -- separator, then positional args:
+buddy vars:set --pipeline=12345 -- NODE_OPTIONS "--max-old-space-size=4096"
+```
+
+**Scope rules (exactly ONE scope allowed):**
+The Buddy API requires exactly one scope per variable. Combining scopes fails.
+```bash
+# WRONG - two scopes:
+buddy vars:set KEY val --project=foo --pipeline=123
+# ERROR: "Only one scope is allowed"
+
+# RIGHT - one scope:
+buddy vars:set KEY val --pipeline=123
+buddy vars:set KEY val --project=foo
+buddy vars:set KEY val                    # workspace scope (default)
+```
+
+**No `--action` flag:** Action-level variables must be set via the Buddy web UI or pipeline YAML config.
 
 ### vars:delete
 Delete a variable.
