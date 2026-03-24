@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-24
+
+### Added
+
+- Hash-to-integer execution ID resolution — CLI now accepts hex hash execution IDs from Buddy URLs and resolves them automatically via the API
+- `--action` scope for `vars:set` command, enabling action-level variable management (requires `--pipeline`)
+- Scope validation for `vars:set` — rejects conflicting scopes (e.g., `--project` + `--pipeline`) with a clear error message
+- Heap overflow and GC exhaustion patterns to `executions:failed --analyze` error detection
+- Helpful error messages for `pipelines:retry` on wildcard pipelines, suggesting `pipelines:run --branch=` as alternative
+- Comprehensive test coverage for all new code changes (16 new tests, 47 new assertions)
+- `VariablesCommandsTest` integration test suite
+
+### Changed
+
+- Troubleshooting skill restructured to lead with log-fetching commands ("FIRST: Get the Logs")
+- CICD specialist agent updated with gotchas section and stronger emphasis on reading logs before suggesting fixes
+- URL parser agent simplified — no longer needs manual hash resolution since CLI handles it natively
+- `vars:set` help text now documents the `--` separator gotcha for values containing dashes
+- `executions:failed --analyze` improved "Unidentified" fallback to search for keyword-bearing lines instead of blindly showing last 5 lines
+
+### Fixed
+
+- `resolveExecutionId()` now checks both API URL and HTML URL fields when matching hashes (bug caught by TDD)
+- `executions:failed --analyze` no longer produces useless "ERROR" output for heap overflow failures
+- `vars:set` help text now accurately documents scope rules and the `--` separator requirement
+
 ## [1.2.0] - 2026-02-10
 
 ### Added
