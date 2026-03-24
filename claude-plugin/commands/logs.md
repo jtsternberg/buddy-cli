@@ -52,12 +52,15 @@ For failed actions, highlight:
 
 ## URL Support
 
-If a Buddy.works URL is provided, parse it per the `buddy-cli:url-parser` agent.
+If a Buddy.works URL is provided, parse it using the `buddy-cli:url-parser` agent.
+
+> **CRITICAL: URL Execution ID Resolution**
+> Buddy URLs contain hex hash execution IDs (e.g., `698b463a`). The CLI requires integer IDs (e.g., `4099`). The url-parser agent resolves these automatically. Do NOT pass the hash directly to `executions:show` or `executions:failed` — it will silently fail or return "Execution not found".
 
 ## Example Interactions
 
 User: `/buddy-cli:logs https://app.buddy.works/awesomemotive/lindris-frontend/pipelines/pipeline/506857/execution/698b463a`
---> Parse URL, show logs for execution 698b463a on pipeline 506857
+--> Parse URL with url-parser agent (resolves hash to integer ID), show logs for resolved execution on pipeline 506857
 
 User: `/buddy-cli:logs`
 → Show logs from most recent execution
