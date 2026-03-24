@@ -674,4 +674,417 @@ class ExecutionsCommandsTest extends TestCase
         $this->assertCount(1, $data);
         $this->assertSame('Deploy', $data[0]['action']['name']);
     }
+
+    // executions:actions tests
+
+    public function testExecutionsActionsRequiresWorkspace(): void
+    {
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', '--pipeline' => '1', 'execution-id' => '100']);
+    }
+
+    public function testExecutionsActionsRequiresProject(): void
+    {
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', '--pipeline' => '1', 'execution-id' => '100']);
+    }
+
+    public function testExecutionsActionsRequiresPipeline(): void
+    {
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Pipeline ID is required');
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'execution-id' => '100']);
+    }
+
+    public function testExecutionsActionsListsActionExecutions(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->with('ws', 'proj', 1, 100)
+            ->willReturn([
+                'id' => 100,
+                'action_executions' => [
+                    [
+                        'action' => ['name' => 'Build'],
+                        'status' => 'SUCCESSFUL',
+                        'start_date' => '2024-01-15T10:00:00Z',
+                        'finish_date' => '2024-01-15T10:02:00Z',
+                        'action_execution_id' => 'aaa111bbb222',
+                    ],
+                    [
+                        'action' => ['name' => 'Deploy'],
+                        'status' => 'FAILED',
+                        'start_date' => '2024-01-15T10:02:00Z',
+                        'finish_date' => '2024-01-15T10:05:00Z',
+                        'action_execution_id' => 'ccc333ddd444',
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Build', $output);
+        $this->assertStringContainsString('Deploy', $output);
+        $this->assertStringContainsString('SUCCESSFUL', $output);
+        $this->assertStringContainsString('FAILED', $output);
+        $this->assertStringContainsString('aaa111bbb222', $output);
+        $this->assertStringContainsString('ccc333ddd444', $output);
+    }
+
+    public function testExecutionsActionsEmptyActions(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn(['id' => 100, 'action_executions' => []]);
+
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('No action executions found', $tester->getDisplay());
+    }
+
+    public function testExecutionsActionsJsonOutput(): void
+    {
+        $actionExecutions = [
+            [
+                'action' => ['name' => 'Build'],
+                'status' => 'SUCCESSFUL',
+                'action_execution_id' => 'aaa111',
+            ],
+        ];
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn(['id' => 100, 'action_executions' => $actionExecutions]);
+
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            '--json' => true,
+        ]);
+
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertCount(1, $data);
+        $this->assertSame('aaa111', $data[0]['action_execution_id']);
+    }
+
+    public function testExecutionsActionsResolvesHashExecutionId(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn([
+                'executions' => [
+                    [
+                        'id' => 191,
+                        'url' => 'https://api.buddy.works/workspaces/ws/projects/proj/pipelines/1/executions/191',
+                        'html_url' => 'https://app.buddy.works/ws/proj/pipelines/pipeline/1/execution/69c2e5efe09152558bd745e5',
+                    ],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('getExecution')
+            ->with('ws', 'proj', 1, 191)
+            ->willReturn([
+                'id' => 191,
+                'action_executions' => [
+                    [
+                        'action' => ['name' => 'Build'],
+                        'status' => 'SUCCESSFUL',
+                        'action_execution_id' => 'aaa111',
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('executions:actions');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '69c2e5efe09152558bd745e5',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Resolved to execution #191', $output);
+        $this->assertStringContainsString('Build', $output);
+    }
+
+    // executions:action-logs tests
+
+    public function testExecutionsActionLogsRequiresWorkspace(): void
+    {
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No workspace specified');
+        $tester->execute(['--project' => 'proj', '--pipeline' => '1', 'execution-id' => '100', 'action-execution-id' => 'aaa111']);
+    }
+
+    public function testExecutionsActionLogsRequiresProject(): void
+    {
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No project specified');
+        $tester->execute(['--workspace' => 'ws', '--pipeline' => '1', 'execution-id' => '100', 'action-execution-id' => 'aaa111']);
+    }
+
+    public function testExecutionsActionLogsRequiresPipeline(): void
+    {
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Pipeline ID is required');
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'execution-id' => '100', 'action-execution-id' => 'aaa111']);
+    }
+
+    public function testExecutionsActionLogsDisplaysLogs(): void
+    {
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->with('ws', 'proj', 1, 100, 'aaa111bbb222')
+            ->willReturn([
+                'action' => ['name' => 'DB Migration'],
+                'status' => 'SUCCESSFUL',
+                'start_date' => '2024-01-15T10:00:00Z',
+                'finish_date' => '2024-01-15T10:00:03Z',
+                'log' => [
+                    'Resolving 167.71.250.215...',
+                    'Connection established. Executing commands...',
+                    'Migrations have been run successfully.',
+                ],
+            ]);
+
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            'action-execution-id' => 'aaa111bbb222',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('DB Migration', $output);
+        $this->assertStringContainsString('SUCCESSFUL', $output);
+        $this->assertStringContainsString('Migrations have been run successfully.', $output);
+    }
+
+    public function testExecutionsActionLogsEmptyLogs(): void
+    {
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->willReturn([
+                'action' => ['name' => 'Notify'],
+                'status' => 'SUCCESSFUL',
+                'start_date' => '2024-01-15T10:00:00Z',
+                'finish_date' => '2024-01-15T10:00:01Z',
+                'log' => [],
+            ]);
+
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            'action-execution-id' => 'aaa111',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('No log output available', $tester->getDisplay());
+    }
+
+    public function testExecutionsActionLogsJsonOutput(): void
+    {
+        $actionExecution = [
+            'action' => ['name' => 'Build'],
+            'status' => 'SUCCESSFUL',
+            'action_execution_id' => 'aaa111',
+            'log' => ['Building...', 'Done.'],
+        ];
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->willReturn($actionExecution);
+
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            'action-execution-id' => 'aaa111',
+            '--json' => true,
+        ]);
+
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertSame('Build', $data['action']['name']);
+        $this->assertSame(['Building...', 'Done.'], $data['log']);
+    }
+
+    public function testExecutionsActionLogsResolvesHashExecutionId(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn([
+                'executions' => [
+                    [
+                        'id' => 191,
+                        'url' => 'https://api.buddy.works/workspaces/ws/projects/proj/pipelines/1/executions/191',
+                        'html_url' => 'https://app.buddy.works/ws/proj/pipelines/pipeline/1/execution/69c2e5efe09152558bd745e5',
+                    ],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->with('ws', 'proj', 1, 191, 'ccc333ddd444')
+            ->willReturn([
+                'action' => ['name' => 'Deploy'],
+                'status' => 'SUCCESSFUL',
+                'start_date' => '2024-01-15T10:00:00Z',
+                'finish_date' => '2024-01-15T10:00:10Z',
+                'log' => ['Deploying...', 'Done.'],
+            ]);
+
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '69c2e5efe09152558bd745e5',
+            'action-execution-id' => 'ccc333ddd444',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Resolved to execution #191', $output);
+        $this->assertStringContainsString('Deploy', $output);
+        $this->assertStringContainsString('Deploying...', $output);
+    }
+
+    // executions:show --logs tests (verifying the new API method)
+
+    public function testExecutionsShowLogsUsesActionExecutionId(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->with('ws', 'proj', 1, 100)
+            ->willReturn([
+                'id' => 100,
+                'status' => 'SUCCESSFUL',
+                'branch' => ['name' => 'main'],
+                'to_revision' => ['revision' => 'abc123def456'],
+                'creator' => ['name' => 'Test'],
+                'action_executions' => [
+                    [
+                        'action' => ['name' => 'DB Migration'],
+                        'action_execution_id' => 'aaa111',
+                        'status' => 'SUCCESSFUL',
+                        'start_date' => '2024-01-15T10:00:00Z',
+                        'finish_date' => '2024-01-15T10:00:03Z',
+                    ],
+                    [
+                        'action' => ['name' => 'Restart Docker'],
+                        'action_execution_id' => 'bbb222',
+                        'status' => 'SUCCESSFUL',
+                        'start_date' => '2024-01-15T10:00:03Z',
+                        'finish_date' => '2024-01-15T10:00:16Z',
+                    ],
+                ],
+            ]);
+
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->willReturnCallback(function ($ws, $proj, $pipe, $exec, $actionExecId) {
+                if ($actionExecId === 'aaa111') {
+                    return ['log' => ['Running migrations...', 'Migrations complete.']];
+                }
+                return ['log' => ['Restarting containers...', 'All containers healthy.']];
+            });
+
+        $command = $this->app->find('executions:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            '--logs' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Logs: DB Migration', $output);
+        $this->assertStringContainsString('Running migrations...', $output);
+        $this->assertStringContainsString('Logs: Restart Docker', $output);
+        $this->assertStringContainsString('All containers healthy.', $output);
+    }
+
+    public function testExecutionsShowLogsSkipsActionsWithoutExecutionId(): void
+    {
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn([
+                'id' => 100,
+                'status' => 'SUCCESSFUL',
+                'branch' => ['name' => 'main'],
+                'to_revision' => ['revision' => 'abc123'],
+                'creator' => ['name' => 'Test'],
+                'action_executions' => [
+                    [
+                        'action' => ['name' => 'Build'],
+                        // No action_execution_id
+                        'status' => 'SUCCESSFUL',
+                        'start_date' => '2024-01-15T10:00:00Z',
+                        'finish_date' => '2024-01-15T10:02:00Z',
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('executions:show');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            '--logs' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        // Should not crash, just skip logs for actions without execution ID
+        $this->assertStringNotContainsString('Logs:', $tester->getDisplay());
+    }
 }
