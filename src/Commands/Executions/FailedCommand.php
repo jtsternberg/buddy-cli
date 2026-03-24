@@ -157,10 +157,20 @@ HELP);
             $errors = $this->extractErrorsFromLog($log);
 
             if (empty($errors)) {
-                $lastLines = array_slice($log, -5);
+                // Search for any lines with error-like keywords
+                $relevantLines = array_filter($log, function ($line) {
+                    return preg_match('/(?:error|fail|fatal|crash|killed|oom|heap|memory|denied|refused|timeout)/i', $line);
+                });
+
+                if (!empty($relevantLines)) {
+                    $detail = implode("\n", array_slice(array_values($relevantLines), -5));
+                } else {
+                    $detail = implode("\n", array_slice($log, -10));
+                }
+
                 $allErrors['Unidentified'][] = [
                     'action' => $actionName,
-                    'detail' => implode("\n", $lastLines),
+                    'detail' => $detail,
                 ];
             } else {
                 foreach ($errors as $error) {
@@ -209,12 +219,18 @@ HELP);
     private function extractErrorsFromLog(array $logLines): array
     {
         $patterns = [
-            // General errors
-            ['/(?i)\b(error|fatal|exception):\s*(.+)/', 'Error'],
-            ['/(?i)^\s*Error:\s*(.+)/', 'Error'],
+            // Memory/heap issues (specific, before generic "error" patterns)
+            ['/FATAL ERROR:.*Allocation failed.*heap/i', 'Heap Overflow'],
+            ['/JavaScript heap out of memory/i', 'JavaScript Heap Overflow'],
+            ['/Ineffective mark-compacts near heap limit/i', 'GC Exhaustion'],
+            ['/Killed\s+.*(?:npm|node|webpack|vite)/i', 'Process Killed (likely OOM)'],
+            // General errors (require meaningful content after colon)
+            ['/(?i)\bfatal\s+error:\s+(.{10,})/', 'Fatal Error'],
+            ['/(?i)\bexception:\s+(.{10,})/', 'Exception'],
+            ['/(?i)\berror:\s+(.{10,})/', 'Error'],
             // Exit codes
-            ['/exit(?:ed)?\s+(?:with\s+)?(?:code\s+)?(\d+)/', 'Exit Code'],
-            ['/return(?:ed)?\s+(?:code\s+)?(\d+)/', 'Return Code'],
+            ['/exit(?:ed)?\s+(?:with\s+)?(?:code\s+)?(\d+)/i', 'Exit Code'],
+            ['/return(?:ed)?\s+(?:code\s+)?(\d+)/i', 'Return Code'],
             // Build failures
             ['/(?i)build\s+failed/', 'Build Failed'],
             ['/(?i)compilation\s+(?:error|failed)/', 'Compilation Error'],
@@ -229,6 +245,7 @@ HELP);
             ['/(?i)permission\s+denied/', 'Permission Denied'],
             ['/(?i)access\s+denied/', 'Access Denied'],
             ['/(?i)authentication\s+(?:failed|error|required)/', 'Auth Error'],
+            ['/(?i)insufficient\s+scopes?/', 'Insufficient Permissions'],
             // Network issues
             ['/(?i)connection\s+(?:refused|timed?\s*out|failed)/', 'Connection Error'],
             ['/(?i)timeout\s+(?:exceeded|error)/', 'Timeout'],
