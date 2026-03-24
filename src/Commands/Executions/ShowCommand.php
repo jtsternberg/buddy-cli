@@ -103,11 +103,18 @@ HELP);
 
     private function showLogs(OutputInterface $output, string $workspace, string $project, int $pipelineId, int $executionId, array $actionExecutions): void
     {
+        $total = count($actionExecutions);
+        $current = 0;
+
         foreach ($actionExecutions as $actionExec) {
+            $current++;
             $actionExecutionId = $actionExec['action_execution_id'] ?? null;
             if ($actionExecutionId === null) {
                 continue;
             }
+
+            $actionName = $actionExec['action']['name'] ?? 'Unknown';
+            $output->write(sprintf("\r<info>Fetching logs (%d/%d): %s...</info>", $current, $total, $actionName), false, OutputInterface::VERBOSITY_NORMAL);
 
             try {
                 $actionDetails = $this->getBuddyService()->getActionExecutionByExecId(
@@ -123,8 +130,9 @@ HELP);
                     continue;
                 }
 
-                $output->writeln('');
-                $output->writeln(sprintf('<comment>--- Logs: %s ---</comment>', $actionExec['action']['name'] ?? 'Unknown'));
+                // Clear progress line before printing logs
+                $output->write("\r" . str_repeat(' ', 80) . "\r");
+                $output->writeln(sprintf('<comment>--- Logs: %s ---</comment>', $actionName));
                 foreach ($logs as $line) {
                     $output->writeln($line);
                 }
@@ -132,6 +140,9 @@ HELP);
                 // Skip actions where we can't fetch logs
             }
         }
+
+        // Clear any remaining progress line
+        $output->write("\r" . str_repeat(' ', 80) . "\r");
     }
 
     private function outputSummary(OutputInterface $output, array $execution): void
