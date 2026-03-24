@@ -184,6 +184,8 @@ buddy executions:show <exec-id> --pipeline=<id> --logs     # Include action logs
 buddy executions:show <exec-id> --pipeline=<id> --summary  # Compact status overview
 buddy executions:failed <exec-id> --pipeline=<id>           # Show failed action details
 buddy executions:failed <exec-id> --pipeline=<id> --analyze # Categorize error patterns
+buddy executions:actions <exec-id> --pipeline=<id>          # List actions with execution IDs
+buddy executions:action-logs <exec-id> <action-exec-id> --pipeline=<id>  # Logs for one action
 ```
 
 ### Actions
