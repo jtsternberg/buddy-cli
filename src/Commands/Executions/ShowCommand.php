@@ -137,7 +137,14 @@ HELP);
                     $output->writeln($line);
                 }
             } catch (\Exception $e) {
-                // Skip actions where we can't fetch logs
+                if ($output->isVerbose()) {
+                    $output->write("\r" . str_repeat(' ', 80) . "\r");
+                    $output->writeln(sprintf(
+                        '<fg=yellow>  [skipped] Could not fetch logs for %s: %s</>',
+                        $actionName,
+                        $e->getMessage()
+                    ));
+                }
             }
         }
 
