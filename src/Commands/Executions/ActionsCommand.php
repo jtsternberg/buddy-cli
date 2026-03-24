@@ -55,7 +55,7 @@ HELP);
         }
 
         if (empty($actionExecutions)) {
-            $output->writeln('No action executions found.');
+            $output->writeln('<comment>No action executions found.</comment>');
             return self::SUCCESS;
         }
 
