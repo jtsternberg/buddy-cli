@@ -89,7 +89,12 @@ buddy pipelines:get <id> > pipeline.yaml
 
 ### Create pipeline from config
 ```bash
+# From YAML file (full configuration):
 buddy pipelines:create pipeline.yaml
+
+# Via flags (quick creation without a file):
+buddy pipelines:create --name="My Pipeline" --on=MANUAL --refs=refs/heads/main
+buddy pipelines:create --name="My Pipeline" --on=MANUAL --json  # returns full pipeline JSON
 ```
 
 ### Update existing pipeline
