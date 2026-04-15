@@ -913,6 +913,163 @@ YAML;
         $this->assertStringContainsString('Import failed', $tester->getDisplay());
     }
 
+    public function testPipelinesCreateFromFileJsonOutput(): void
+    {
+        $yaml = <<<'YAML'
+name: "Test Pipeline"
+trigger_mode: MANUAL
+ref_name: refs/heads/main
+YAML;
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->method('createPipeline')
+            ->willReturn(['id' => 42, 'name' => 'Test Pipeline', 'trigger_mode' => 'MANUAL']);
+
+        $this->mockBuddyService->method('updatePipelineYaml');
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'file' => $yamlFile,
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertSame(42, $data['id']);
+        $this->assertSame('Test Pipeline', $data['name']);
+    }
+
+    // pipelines:create flag-based tests
+
+    public function testPipelinesCreateFromFlagsRequiresName(): void
+    {
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Pipeline name is required', $tester->getDisplay());
+    }
+
+    public function testPipelinesCreateFromFlagsSuccess(): void
+    {
+        $this->mockBuddyService->expects($this->once())
+            ->method('createPipeline')
+            ->with('ws', 'proj', [
+                'name' => 'My Pipeline',
+                'trigger_mode' => 'MANUAL',
+                'ref_name' => 'refs/heads/main',
+            ])
+            ->willReturn(['id' => 55, 'name' => 'My Pipeline', 'trigger_mode' => 'MANUAL']);
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'My Pipeline',
+            '--on' => 'MANUAL',
+            '--refs' => 'refs/heads/main',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Created pipeline: My Pipeline', $output);
+        $this->assertStringContainsString('ID: 55', $output);
+    }
+
+    public function testPipelinesCreateFromFlagsNameOnly(): void
+    {
+        $this->mockBuddyService->expects($this->once())
+            ->method('createPipeline')
+            ->with('ws', 'proj', ['name' => 'Simple Pipeline'])
+            ->willReturn(['id' => 10, 'name' => 'Simple Pipeline']);
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'Simple Pipeline',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Created pipeline: Simple Pipeline', $tester->getDisplay());
+        $this->assertStringContainsString('ID: 10', $tester->getDisplay());
+    }
+
+    public function testPipelinesCreateFromFlagsNormalizesOnToUppercase(): void
+    {
+        $this->mockBuddyService->expects($this->once())
+            ->method('createPipeline')
+            ->with('ws', 'proj', [
+                'name' => 'My Pipeline',
+                'trigger_mode' => 'ON_EVERY_PUSH',
+            ])
+            ->willReturn(['id' => 20, 'name' => 'My Pipeline']);
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'My Pipeline',
+            '--on' => 'on_every_push',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function testPipelinesCreateFromFlagsJsonOutput(): void
+    {
+        $pipeline = ['id' => 77, 'name' => 'CI Pipeline', 'trigger_mode' => 'ON_EVERY_PUSH'];
+        $this->mockBuddyService->method('createPipeline')
+            ->willReturn($pipeline);
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'CI Pipeline',
+            '--on' => 'ON_EVERY_PUSH',
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertJson($output);
+        $data = json_decode($output, true);
+        $this->assertSame(77, $data['id']);
+        $this->assertSame('CI Pipeline', $data['name']);
+        $this->assertSame('ON_EVERY_PUSH', $data['trigger_mode']);
+    }
+
+    public function testPipelinesCreateFromFlagsHandlesApiError(): void
+    {
+        $this->mockBuddyService->method('createPipeline')
+            ->willThrowException(new BuddyResponseException(422, [], '{"error":"Validation error"}'));
+
+        $command = $this->app->find('pipelines:create');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'Bad Pipeline',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Failed to create pipeline', $tester->getDisplay());
+    }
+
     // pipelines:update tests
 
     public function testPipelinesUpdateRequiresWorkspace(): void

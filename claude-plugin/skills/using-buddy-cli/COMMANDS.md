@@ -53,10 +53,19 @@ buddy pipelines:get <pipeline-id>
 ```
 
 ### pipelines:create
-Create pipeline from YAML file.
+Create pipeline from YAML file or via flags.
 ```bash
+# From YAML file (full configuration):
 buddy pipelines:create pipeline.yaml
+
+# Via flags (quick creation):
+buddy pipelines:create --name="My Pipeline" --on=MANUAL --refs=refs/heads/main
+buddy pipelines:create --name="My Pipeline" --on=ON_EVERY_PUSH --json
 ```
+
+`--on` accepts `MANUAL`, `ON_EVERY_PUSH`, or `SCHEDULED` (case-insensitive).
+`--refs` sets the branch/tag pattern (e.g. `refs/heads/main`, `refs/tags/v*`).
+Both modes support `--json` to return the full pipeline object.
 
 ### pipelines:update
 Update pipeline from YAML file.

@@ -170,6 +170,7 @@ buddy pipelines:retry <id>                # Retry last failed execution
 buddy pipelines:cancel <id>               # Cancel running execution
 buddy pipelines:get <id>                  # Get pipeline config as native YAML file
 buddy pipelines:create <file>             # Create new pipeline from native YAML file
+buddy pipelines:create --name="My Pipeline" --on=MANUAL --refs=refs/heads/main  # Create via flags
 buddy pipelines:update <id> <file>        # Update pipeline from native YAML
 buddy pipelines:settings <id>             # Show pipeline settings (metadata + variables)
 buddy pipelines:settings <id> --update <file>  # Update pipeline settings from YAML

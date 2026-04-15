@@ -8,6 +8,7 @@ use BuddyCli\Commands\BaseCommand;
 use BuddyCli\Output\YamlFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class CreateCommand extends BaseCommand
@@ -16,12 +17,22 @@ class CreateCommand extends BaseCommand
     {
         $this
             ->setName('pipelines:create')
-            ->setDescription('Create new pipeline from YAML file')
-            ->addArgument('file', InputArgument::REQUIRED, 'YAML file path')
+            ->setDescription('Create a new pipeline (from YAML file or flags)')
+            ->addArgument('file', InputArgument::OPTIONAL, 'YAML file path (optional — omit to use flags instead)')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Pipeline name (flag-based mode)')
+            ->addOption('on', null, InputOption::VALUE_REQUIRED, 'Trigger mode: MANUAL, ON_EVERY_PUSH, SCHEDULED (flag-based mode)')
+            ->addOption('refs', null, InputOption::VALUE_REQUIRED, 'Ref name / branch pattern, e.g. refs/heads/main (flag-based mode)')
             ->setHelp(<<<'HELP'
-Creates a new pipeline from a native Buddy YAML file. Requires a pipeline name.
+Creates a new pipeline. Supports two modes:
 
-The YAML is applied as the full pipeline configuration (lossless). This command
+<comment>Flag-based (quick creation):</comment>
+  buddy pipelines:create --name="Deploy to Production" --on=MANUAL --refs=refs/heads/main
+  buddy pipelines:create --name="Deploy to Production" --on=MANUAL --refs=refs/heads/main --json
+
+<comment>YAML file (full configuration):</comment>
+  buddy pipelines:create pipeline.yaml
+
+The YAML file is applied as the full pipeline configuration (lossless). This command
 creates a pipeline with minimal metadata first, then patches the native YAML.
 
 Example YAML:
@@ -49,6 +60,15 @@ HELP);
         $project = $this->requireProject($input);
         $file = $input->getArgument('file');
 
+        if ($file !== null) {
+            return $this->createFromFile($input, $output, $workspace, $project, $file);
+        }
+
+        return $this->createFromFlags($input, $output, $workspace, $project);
+    }
+
+    private function createFromFile(InputInterface $input, OutputInterface $output, string $workspace, string $project, string $file): int
+    {
         if (!file_exists($file)) {
             $output->writeln("<error>File not found: {$file}</error>");
             return self::FAILURE;
@@ -69,7 +89,6 @@ HELP);
         try {
             $pipeline = $this->getBuddyService()->createPipeline($workspace, $project, $pipelineData);
             $this->getBuddyService()->updatePipelineYaml($workspace, $project, (int) $pipeline['id'], $yaml);
-            $output->writeln("<info>Created pipeline: {$pipeline['name']} (ID: {$pipeline['id']})</info>");
         } catch (\Exception $e) {
             $message = "Import failed: {$e->getMessage()}";
             if ($pipeline !== null) {
@@ -79,6 +98,50 @@ HELP);
             return self::FAILURE;
         }
 
+        if ($this->isJsonOutput($input)) {
+            $this->outputJson($output, $pipeline);
+            return self::SUCCESS;
+        }
+
+        $output->writeln("<info>Created pipeline: {$pipeline['name']} (ID: {$pipeline['id']})</info>");
+        return self::SUCCESS;
+    }
+
+    private function createFromFlags(InputInterface $input, OutputInterface $output, string $workspace, string $project): int
+    {
+        $name = $input->getOption('name');
+
+        if (empty($name)) {
+            $output->writeln('<error>Pipeline name is required. Use --name=<name> or provide a YAML file.</error>');
+            return self::FAILURE;
+        }
+
+        $triggerMode = $input->getOption('on');
+        $refs = $input->getOption('refs');
+
+        $pipelineData = ['name' => $name];
+
+        if (!empty($triggerMode)) {
+            $pipelineData['trigger_mode'] = strtoupper($triggerMode);
+        }
+
+        if (!empty($refs)) {
+            $pipelineData['ref_name'] = $refs;
+        }
+
+        try {
+            $pipeline = $this->getBuddyService()->createPipeline($workspace, $project, $pipelineData);
+        } catch (\Exception $e) {
+            $output->writeln("<error>Failed to create pipeline: {$e->getMessage()}</error>");
+            return self::FAILURE;
+        }
+
+        if ($this->isJsonOutput($input)) {
+            $this->outputJson($output, $pipeline);
+            return self::SUCCESS;
+        }
+
+        $output->writeln("<info>Created pipeline: {$pipeline['name']} (ID: {$pipeline['id']})</info>");
         return self::SUCCESS;
     }
 
