@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `pipelines:create` flag-based mode — create pipelines without a YAML file using `--name`, `--on`, `--refs`
+- `--json` output support for `pipelines:create` in both file and flag-based modes
+- `--on` flag is case-insensitive (e.g. `--on=manual` normalizes to `MANUAL`)
+
 ## [1.4.0] - 2026-03-24
 
 ### Added

@@ -27,6 +27,8 @@ buddy pipelines:list
 buddy pipelines:run <id> [--branch=<branch>] [--wait]
 buddy pipelines:retry <id>
 buddy pipelines:cancel <id>
+buddy pipelines:create pipeline.yaml                          # Create from YAML
+buddy pipelines:create --name="X" --on=MANUAL --refs=<ref>    # Create via flags
 
 # Execution monitoring
 buddy executions:list --pipeline=<id>
