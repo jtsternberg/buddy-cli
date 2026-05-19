@@ -164,6 +164,64 @@ class ExecutionsCommandsTest extends TestCase
         $this->assertSame(100, $data[0]['id']);
     }
 
+    public function testExecutionsListShowsPrNumberForPrTriggeredRun(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn([
+                'executions' => [
+                    [
+                        'id' => 471,
+                        'status' => 'FAILED',
+                        'pull_request' => ['number' => 611, 'url' => 'https://github.com/org/repo/pull/611'],
+                        'creator' => ['name' => 'Buddy Agent'],
+                        'start_date' => '2024-01-15T10:00:00Z',
+                        'finish_date' => '2024-01-15T10:00:31Z',
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('executions:list');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('PR #611', $output);
+        $this->assertStringContainsString('Branch / PR', $output);
+    }
+
+    public function testExecutionsListShowsBranchWhenNoPullRequest(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn([
+                'executions' => [
+                    [
+                        'id' => 470,
+                        'status' => 'SUCCESSFUL',
+                        'branch' => ['name' => 'main'],
+                        'creator' => ['name' => 'John Doe'],
+                    ],
+                ],
+            ]);
+
+        $command = $this->app->find('executions:list');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('main', $output);
+        $this->assertStringContainsString('Branch / PR', $output);
+    }
+
     // executions:show tests
 
     public function testExecutionsShowWithDetails(): void

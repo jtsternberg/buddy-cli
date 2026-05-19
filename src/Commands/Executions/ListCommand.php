@@ -75,17 +75,21 @@ HELP);
 
         $rows = [];
         foreach ($executions as $execution) {
+            $ref = isset($execution['pull_request']['number'])
+                ? 'PR #' . $execution['pull_request']['number']
+                : ($execution['branch']['name'] ?? '-');
+
             $rows[] = [
                 $execution['id'] ?? '-',
                 $this->formatStatus($execution['status'] ?? 'UNKNOWN'),
-                $execution['branch']['name'] ?? '-',
+                $ref,
                 $execution['creator']['name'] ?? '-',
                 $this->formatTime($execution['start_date'] ?? null),
                 $this->formatDuration($execution['start_date'] ?? null, $execution['finish_date'] ?? null),
             ];
         }
 
-        TableFormatter::render($output, ['ID', 'Status', 'Branch', 'Creator', 'Started', 'Duration'], $rows);
+        TableFormatter::render($output, ['ID', 'Status', 'Branch / PR', 'Creator', 'Started', 'Duration'], $rows);
 
         return self::SUCCESS;
     }
