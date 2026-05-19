@@ -1088,7 +1088,33 @@ class ExecutionsCommandsTest extends TestCase
         $this->assertStringNotContainsString('Logs:', $tester->getDisplay());
     }
 
-    public function testExecutionsActionLogsRejectsNonHexId(): void
+    public function testExecutionsActionLogsAcceptsAlphanumericId(): void
+    {
+        $this->mockBuddyService->method('getActionExecutionByExecId')
+            ->with('ws', 'proj', 1, 100, 'fsm47naztg9n35')
+            ->willReturn([
+                'action' => ['name' => 'Run Tests'],
+                'status' => 'SUCCESSFUL',
+                'start_date' => '2024-01-15T10:00:00Z',
+                'finish_date' => '2024-01-15T10:00:05Z',
+                'log' => ['All tests passed.'],
+            ]);
+
+        $command = $this->app->find('executions:action-logs');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--pipeline' => '1',
+            'execution-id' => '100',
+            'action-execution-id' => 'fsm47naztg9n35',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Run Tests', $tester->getDisplay());
+    }
+
+    public function testExecutionsActionLogsRejectsNonAlphanumericId(): void
     {
         $command = $this->app->find('executions:action-logs');
         $tester = new CommandTester($command);
@@ -1100,7 +1126,7 @@ class ExecutionsCommandsTest extends TestCase
             '--project' => 'proj',
             '--pipeline' => '1',
             'execution-id' => '100',
-            'action-execution-id' => 'not-a-hex-string!',
+            'action-execution-id' => 'not-valid!',
         ]);
     }
 }

@@ -45,9 +45,9 @@ HELP);
         $executionId = $this->resolveExecutionId($input, $output, $workspace, $project, $pipelineId);
         $actionExecutionId = $input->getArgument('action-execution-id');
 
-        if (!ctype_xdigit($actionExecutionId) || $actionExecutionId === '') {
+        if ($actionExecutionId === '' || !ctype_alnum($actionExecutionId)) {
             throw new \RuntimeException(
-                "Invalid action-execution-id '{$actionExecutionId}'. Expected a hex string (e.g., 69c2e627e09152558bd74820). "
+                "Invalid action-execution-id '{$actionExecutionId}'. Expected an alphanumeric string (e.g., 69c2e627e09152558bd74820 or fsm47naztg9n35). "
                 . "Use 'buddy executions:actions' to find valid action execution IDs."
             );
         }
