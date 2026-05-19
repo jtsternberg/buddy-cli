@@ -26,6 +26,7 @@ class RunCommand extends BaseCommand
             ->addOption('comment', 'c', InputOption::VALUE_REQUIRED, 'Execution comment')
             ->addOption('var', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Set variable (KEY=value)')
             ->addOption('wait', null, InputOption::VALUE_NONE, 'Wait for execution to complete')
+            ->addOption('follow', null, InputOption::VALUE_NONE, 'Stream live action-by-action progress (implies --wait; takes precedence if both are set)')
             ->setHelp(<<<'HELP'
 Triggers a new execution of the specified pipeline.
 
@@ -122,7 +123,9 @@ HELP);
             return self::FAILURE;
         }
 
-        if ($input->getOption('wait')) {
+        if ($input->getOption('follow')) {
+            $execution = $this->followExecution($workspace, $project, $pipelineId, (int) $execution['id'], $output);
+        } elseif ($input->getOption('wait')) {
             $output->writeln('<comment>Waiting for execution to complete...</comment>');
             $execution = $this->waitForExecution($workspace, $project, $pipelineId, (int) $execution['id'], $output);
         }
@@ -143,6 +146,58 @@ HELP);
         TableFormatter::keyValue($output, $data, 'Execution Started');
 
         return $status === 'FAILED' ? self::FAILURE : self::SUCCESS;
+    }
+
+    private function followExecution(string $workspace, string $project, int $pipelineId, int $executionId, OutputInterface $output): array
+    {
+        $output->writeln(sprintf('<comment>[ci] Execution #%d started</comment>', $executionId));
+
+        $knownStatuses = [];
+        $maxAttempts   = 600;
+        $attempt       = 0;
+        $execution     = [];
+
+        while ($attempt < $maxAttempts) {
+            $execution      = $this->getBuddyService()->getExecution($workspace, $project, $pipelineId, $executionId);
+            $status         = $execution['status'] ?? '';
+            $actionExecutions = $execution['action_executions'] ?? [];
+
+            foreach ($actionExecutions as $index => $actionExec) {
+                $name         = $actionExec['action']['name'] ?? 'Unknown';
+                $actionStatus = $actionExec['status'] ?? 'UNKNOWN';
+                $key          = $actionExec['id'] ?? $actionExec['action']['id'] ?? "idx:{$index}:{$name}";
+                $prev         = $knownStatuses[$key] ?? null;
+
+                if ($actionStatus === $prev) {
+                    continue;
+                }
+
+                $knownStatuses[$key] = $actionStatus;
+                $duration = $this->formatDuration($actionExec['start_date'] ?? null, $actionExec['finish_date'] ?? null);
+
+                $line = match ($actionStatus) {
+                    'INPROGRESS' => sprintf('  <fg=yellow>↻</> %s <fg=gray>(running...)</>', $name),
+                    'SUCCESSFUL' => sprintf('  <fg=green>✓</> %s <fg=gray>(%s)</>', $name, $duration),
+                    'FAILED'     => sprintf('  <fg=red>✗</> %s <fg=gray>(%s)</>', $name, $duration),
+                    'SKIPPED'    => sprintf('  <fg=gray>-</> %s <fg=gray>(skipped)</>', $name),
+                    default      => null,
+                };
+
+                if ($line !== null) {
+                    $output->writeln($line);
+                }
+            }
+
+            if (!in_array($status, ['INPROGRESS', 'ENQUEUED', 'INITIAL'], true)) {
+                return $execution;
+            }
+
+            sleep(1);
+            $attempt++;
+        }
+
+        $output->writeln('<comment>Timeout waiting for execution.</comment>');
+        return $execution;
     }
 
     private function waitForExecution(string $workspace, string $project, int $pipelineId, int $executionId, OutputInterface $output): array
