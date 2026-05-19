@@ -260,6 +260,103 @@ class PipelinesCommandsTest extends TestCase
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Run PHPUnit', $output);
         $this->assertStringContainsString('running...', $output);
+        $this->assertStringContainsString('4s', $output);
+    }
+
+    public function testPipelinesRunFollowPrintsFailedAndReturnsFailure(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('runExecution')
+            ->willReturn(['id' => 201, 'status' => 'INPROGRESS']);
+
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn([
+                'id' => 201,
+                'status' => 'FAILED',
+                'action_executions' => [
+                    ['id' => 'a1', 'action' => ['name' => 'Run PHPUnit'], 'status' => 'FAILED', 'start_date' => '2024-01-15T10:00:00Z', 'finish_date' => '2024-01-15T10:00:09Z'],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:run');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--follow' => true,
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Run PHPUnit', $output);
+        $this->assertStringContainsString('9s', $output);
+    }
+
+    public function testPipelinesRunFollowRendersSkippedAction(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('runExecution')
+            ->willReturn(['id' => 202, 'status' => 'INPROGRESS']);
+
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn([
+                'id' => 202,
+                'status' => 'SUCCESSFUL',
+                'action_executions' => [
+                    ['id' => 'b1', 'action' => ['name' => 'Deploy to staging'], 'status' => 'SKIPPED'],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:run');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--follow' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Deploy to staging', $output);
+        $this->assertStringContainsString('skipped', $output);
+    }
+
+    public function testPipelinesRunFollowTracksDuplicateActionNamesIndependently(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('runExecution')
+            ->willReturn(['id' => 203, 'status' => 'INPROGRESS']);
+
+        $this->mockBuddyService->method('getExecution')
+            ->willReturn([
+                'id' => 203,
+                'status' => 'SUCCESSFUL',
+                'action_executions' => [
+                    ['id' => 'c1', 'action' => ['name' => 'Run tests'], 'status' => 'SUCCESSFUL', 'start_date' => '2024-01-15T10:00:00Z', 'finish_date' => '2024-01-15T10:00:02Z'],
+                    ['id' => 'c2', 'action' => ['name' => 'Run tests'], 'status' => 'FAILED',     'start_date' => '2024-01-15T10:00:00Z', 'finish_date' => '2024-01-15T10:00:05Z'],
+                ],
+            ]);
+
+        $command = $this->app->find('pipelines:run');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--follow' => true,
+        ]);
+
+        $output = $tester->getDisplay();
+        // Both same-named actions should appear as separate lines (different ids => not collapsed).
+        $this->assertSame(2, substr_count($output, 'Run tests'));
     }
 
     public function testPipelinesRunHandlesApiError(): void

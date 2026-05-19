@@ -26,7 +26,7 @@ class RunCommand extends BaseCommand
             ->addOption('comment', 'c', InputOption::VALUE_REQUIRED, 'Execution comment')
             ->addOption('var', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Set variable (KEY=value)')
             ->addOption('wait', null, InputOption::VALUE_NONE, 'Wait for execution to complete')
-            ->addOption('follow', null, InputOption::VALUE_NONE, 'Stream live action-by-action progress (implies --wait)')
+            ->addOption('follow', null, InputOption::VALUE_NONE, 'Stream live action-by-action progress (implies --wait; takes precedence if both are set)')
             ->setHelp(<<<'HELP'
 Triggers a new execution of the specified pipeline.
 
@@ -162,16 +162,17 @@ HELP);
             $status         = $execution['status'] ?? '';
             $actionExecutions = $execution['action_executions'] ?? [];
 
-            foreach ($actionExecutions as $actionExec) {
+            foreach ($actionExecutions as $index => $actionExec) {
                 $name         = $actionExec['action']['name'] ?? 'Unknown';
                 $actionStatus = $actionExec['status'] ?? 'UNKNOWN';
-                $prev         = $knownStatuses[$name] ?? null;
+                $key          = $actionExec['id'] ?? $actionExec['action']['id'] ?? "idx:{$index}:{$name}";
+                $prev         = $knownStatuses[$key] ?? null;
 
                 if ($actionStatus === $prev) {
                     continue;
                 }
 
-                $knownStatuses[$name] = $actionStatus;
+                $knownStatuses[$key] = $actionStatus;
                 $duration = $this->formatDuration($actionExec['start_date'] ?? null, $actionExec['finish_date'] ?? null);
 
                 $line = match ($actionStatus) {
