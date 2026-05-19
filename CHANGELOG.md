@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-05-19
+
+### Added
+
+- `pipelines:run --follow` — streams live action-by-action progress with status transitions (running, succeeded, failed, skipped) (#19)
+- `executions:list` now displays `PR #<number>` for pull-request-triggered runs; column header renamed `Branch` → `Branch / PR` (#18)
+- `BuddyService::getPipelines()` accepts an optional `$filters` array forwarded to the SDK (e.g. `page`, `per_page`, `on_every_push`) (#16)
+- `BuddyService::getAllPipelines()` — transparently pages through all results and returns them in a single merged response (#16)
+
+### Fixed
+
+- `executions:action-logs` now accepts alphanumeric action-execution IDs (e.g. `fsm47naztg9n35`), not just hex (#17)
+
 ## [1.5.0] - 2026-04-15
 
 ### Added

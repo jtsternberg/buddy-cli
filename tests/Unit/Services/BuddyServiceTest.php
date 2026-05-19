@@ -151,7 +151,7 @@ class BuddyServiceTest extends TestCase
     {
         $page1 = array_fill(0, 20, ['id' => 1]);
         $page2 = array_fill(0, 20, ['id' => 2]);
-        $page3 = array_fill(0, 5,  ['id' => 3]);
+        $page3 = array_fill(0, 5, ['id' => 3]);
 
         $pipelinesApi = $this->createMock(Pipelines::class);
         $pipelinesApi->expects($this->exactly(3))
