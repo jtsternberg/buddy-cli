@@ -120,7 +120,7 @@ class BuddyServiceTest extends TestCase
 
         $pipelinesApi = $this->createMock(Pipelines::class);
         $pipelinesApi->method('getPipelines')
-            ->with('my-ws', 'project1')
+            ->with('my-ws', 'project1', [])
             ->willReturn($this->createMockResponse($expected));
 
         $this->mockBuddy->method('getApiPipelines')
@@ -128,6 +128,46 @@ class BuddyServiceTest extends TestCase
 
         $result = $this->service->getPipelines('my-ws', 'project1');
         $this->assertSame($expected, $result);
+    }
+
+    public function testGetPipelinesPassesFiltersToSdk(): void
+    {
+        $filters = ['page' => 2, 'per_page' => 10, 'on_every_push' => true];
+        $expected = ['pipelines' => [['id' => 5, 'name' => 'Test']]];
+
+        $pipelinesApi = $this->createMock(Pipelines::class);
+        $pipelinesApi->method('getPipelines')
+            ->with('my-ws', 'project1', $filters)
+            ->willReturn($this->createMockResponse($expected));
+
+        $this->mockBuddy->method('getApiPipelines')
+            ->willReturn($pipelinesApi);
+
+        $result = $this->service->getPipelines('my-ws', 'project1', $filters);
+        $this->assertSame($expected, $result);
+    }
+
+    public function testGetAllPipelinesMergesMultiplePages(): void
+    {
+        $page1 = array_fill(0, 20, ['id' => 1]);
+        $page2 = array_fill(0, 20, ['id' => 2]);
+        $page3 = array_fill(0, 5,  ['id' => 3]);
+
+        $pipelinesApi = $this->createMock(Pipelines::class);
+        $pipelinesApi->expects($this->exactly(3))
+            ->method('getPipelines')
+            ->willReturnOnConsecutiveCalls(
+                $this->createMockResponse(['pipelines' => $page1]),
+                $this->createMockResponse(['pipelines' => $page2]),
+                $this->createMockResponse(['pipelines' => $page3])
+            );
+
+        $this->mockBuddy->method('getApiPipelines')
+            ->willReturn($pipelinesApi);
+
+        $result = $this->service->getAllPipelines('my-ws', 'project1');
+
+        $this->assertCount(45, $result['pipelines']);
     }
 
     public function testGetPipeline(): void

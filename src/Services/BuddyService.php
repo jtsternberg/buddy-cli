@@ -55,11 +55,27 @@ class BuddyService
 
     // Pipeline methods
 
-    public function getPipelines(string $workspace, string $projectName): array
+    public function getPipelines(string $workspace, string $projectName, array $filters = []): array
     {
         return $this->withAutoRefresh(
-            fn () => $this->buddy->getApiPipelines()->getPipelines($workspace, $projectName)->getBody()
+            fn () => $this->buddy->getApiPipelines()->getPipelines($workspace, $projectName, $filters)->getBody()
         );
+    }
+
+    public function getAllPipelines(string $workspace, string $projectName): array
+    {
+        $all     = [];
+        $page    = 1;
+        $perPage = 20;
+
+        do {
+            $response = $this->getPipelines($workspace, $projectName, ['page' => $page, 'per_page' => $perPage]);
+            $batch    = $response['pipelines'] ?? [];
+            $all      = array_merge($all, $batch);
+            $page++;
+        } while (count($batch) === $perPage);
+
+        return array_merge($response, ['pipelines' => $all]);
     }
 
     public function getPipeline(string $workspace, string $projectName, int $pipelineId): array
