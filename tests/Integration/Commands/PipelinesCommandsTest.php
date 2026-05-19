@@ -220,6 +220,48 @@ class PipelinesCommandsTest extends TestCase
         $this->assertSame(100, $data['id']);
     }
 
+    public function testPipelinesRunFollowPrintsActionProgress(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+
+        $this->mockBuddyService->method('runExecution')
+            ->willReturn(['id' => 200, 'status' => 'INPROGRESS']);
+
+        $this->mockBuddyService->expects($this->exactly(2))
+            ->method('getExecution')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    'id' => 200,
+                    'status' => 'INPROGRESS',
+                    'action_executions' => [
+                        ['action' => ['name' => 'Run PHPUnit'], 'status' => 'INPROGRESS', 'start_date' => '2024-01-15T10:00:00Z'],
+                    ],
+                ],
+                [
+                    'id' => 200,
+                    'status' => 'SUCCESSFUL',
+                    'action_executions' => [
+                        ['action' => ['name' => 'Run PHPUnit'], 'status' => 'SUCCESSFUL', 'start_date' => '2024-01-15T10:00:00Z', 'finish_date' => '2024-01-15T10:00:04Z'],
+                    ],
+                ]
+            );
+
+        $command = $this->app->find('pipelines:run');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '1',
+            '--follow' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Run PHPUnit', $output);
+        $this->assertStringContainsString('running...', $output);
+    }
+
     public function testPipelinesRunHandlesApiError(): void
     {
         $this->mockBuddyService->method('getPipeline')
