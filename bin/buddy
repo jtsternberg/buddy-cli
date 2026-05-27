@@ -7,4 +7,20 @@
 # HTTPS requests with "cURL error 77: error setting certificate verify
 # locations". buddy-cli has no reason to honor a host-app php.ini.
 unset PHPRC
-exec php "$(dirname "$0")/buddy.php" "$@"
+
+# Resolve symlinks to locate buddy.php next to the real launcher.
+# Needed because `buddy self:install` and `composer global require` both
+# install buddy as a symlink in a PATH dir; $0 then points at the symlink,
+# not at the package's bin/ where buddy.php lives. macOS readlink lacks -f,
+# so walk the symlink chain manually (POSIX).
+self=$0
+while [ -L "$self" ]; do
+	link=$(readlink "$self")
+	case "$link" in
+		/*) self=$link ;;
+		*) self=$(dirname "$self")/$link ;;
+	esac
+done
+dir=$(cd "$(dirname "$self")" && pwd)
+
+exec php "$dir/buddy.php" "$@"
