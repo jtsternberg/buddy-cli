@@ -1,9 +1,7 @@
 {
   "database": "dolt",
   "backend": "dolt",
-  "dolt_mode": "server",
-  "dolt_server_host": "127.0.0.1",
-  "dolt_server_port": 3308,
-  "dolt_database": "beads_buddy-cli",
+  "dolt_mode": "embedded",
+  "dolt_database": "beads_buddy_cli",
   "project_id": "8c1fd894-7662-4bbc-80fb-80bb8c683a61"
 }
