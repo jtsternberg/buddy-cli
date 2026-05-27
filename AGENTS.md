@@ -36,7 +36,8 @@ buddy <command>                # Global (after self:install)
 ## Architecture
 
 ```
-bin/buddy                    # Entry point
+bin/buddy                    # Entry point (sh wrapper; unsets PHPRC, execs bin/buddy.php)
+bin/buddy.php                # PHP application bootstrap
 src/
 ├── Application.php          # Symfony Console application bootstrap
 ├── Commands/                # Command classes organized by resource

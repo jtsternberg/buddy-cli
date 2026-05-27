@@ -1,0 +1,43 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// Override script name for clean help output (e.g., "buddy help" instead of "/path/to/buddy help").
+// Symfony Console reads $_SERVER['PHP_SELF'] directly in Command::getProcessedHelp() with no
+// official API to customize it. This workaround is acknowledged by Symfony maintainers as
+// "good enough" (see: https://github.com/symfony/symfony/issues/18524).
+$_SERVER['PHP_SELF'] = 'buddy';
+$_SERVER['argv'][0] = 'buddy';
+
+// Find autoloader
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',           // Local development
+    __DIR__ . '/../../../autoload.php',            // Installed as dependency
+];
+
+$autoloader = null;
+foreach ($autoloadPaths as $path) {
+    if (file_exists($path)) {
+        $autoloader = $path;
+        break;
+    }
+}
+
+if ($autoloader === null) {
+    fwrite(STDERR, "Could not find autoloader. Run 'composer install' first.\n");
+    exit(1);
+}
+
+require $autoloader;
+
+// Load .env files from current directory and all parent directories
+$cwd = getcwd();
+if ($cwd !== false) {
+    BuddyCli\Services\EnvLoader::loadRecursive($cwd);
+}
+
+use BuddyCli\Application;
+
+$app = new Application();
+$app->run();

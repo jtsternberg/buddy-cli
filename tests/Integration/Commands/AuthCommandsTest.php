@@ -67,7 +67,7 @@ class AuthCommandsTest extends TestCase
         // Run login in background process and capture initial output
         $port = 18090 + rand(0, 100);
         $cmd = sprintf(
-            'cd %s && timeout 2 php bin/buddy login --client-id=test-id --client-secret=test-secret --no-browser --port=%d 2>&1 || true',
+            'cd %s && timeout 2 php bin/buddy.php login --client-id=test-id --client-secret=test-secret --no-browser --port=%d 2>&1 || true',
             escapeshellarg(dirname(__DIR__, 3)),
             $port
         );
@@ -86,7 +86,7 @@ class AuthCommandsTest extends TestCase
         // Run login --test in background
         $port = 18190 + rand(0, 100);
         $cmd = sprintf(
-            'cd %s && timeout 2 php bin/buddy login --test --port=%d 2>&1 || true',
+            'cd %s && timeout 2 php bin/buddy.php login --test --port=%d 2>&1 || true',
             escapeshellarg(dirname(__DIR__, 3)),
             $port
         );
@@ -110,7 +110,7 @@ class AuthCommandsTest extends TestCase
         ];
 
         $cmd = sprintf(
-            'cd %s && php bin/buddy login --test --port=%d',
+            'cd %s && php bin/buddy.php login --test --port=%d',
             escapeshellarg(dirname(__DIR__, 3)),
             $port
         );
@@ -148,7 +148,7 @@ class AuthCommandsTest extends TestCase
         try {
             // Try to run login on same port
             $cmd = sprintf(
-                'cd %s && php bin/buddy login --client-id=test-id --client-secret=test-secret --port=%d 2>&1',
+                'cd %s && php bin/buddy.php login --client-id=test-id --client-secret=test-secret --port=%d 2>&1',
                 escapeshellarg(dirname(__DIR__, 3)),
                 $port
             );

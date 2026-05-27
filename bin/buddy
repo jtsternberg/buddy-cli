@@ -1,43 +1,26 @@
-#!/usr/bin/env php
-<?php
+#!/bin/sh
+# buddy-cli launcher
+#
+# Unsets PHPRC before invoking PHP so that host-application php.ini files
+# (notably LocalWP's per-site config, which pins openssl.cafile / curl.cainfo
+# to a wp-includes ca-bundle.crt scoped to one WP install) cannot break our
+# HTTPS requests with "cURL error 77: error setting certificate verify
+# locations". buddy-cli has no reason to honor a host-app php.ini.
+unset PHPRC
 
-declare(strict_types=1);
+# Resolve symlinks to locate buddy.php next to the real launcher.
+# Needed because `buddy self:install` and `composer global require` both
+# install buddy as a symlink in a PATH dir; $0 then points at the symlink,
+# not at the package's bin/ where buddy.php lives. macOS readlink lacks -f,
+# so walk the symlink chain manually (POSIX).
+self=$0
+while [ -L "$self" ]; do
+	link=$(readlink "$self")
+	case "$link" in
+		/*) self=$link ;;
+		*) self=$(dirname "$self")/$link ;;
+	esac
+done
+dir=$(cd "$(dirname "$self")" && pwd)
 
-// Override script name for clean help output (e.g., "buddy help" instead of "/path/to/buddy help").
-// Symfony Console reads $_SERVER['PHP_SELF'] directly in Command::getProcessedHelp() with no
-// official API to customize it. This workaround is acknowledged by Symfony maintainers as
-// "good enough" (see: https://github.com/symfony/symfony/issues/18524).
-$_SERVER['PHP_SELF'] = 'buddy';
-$_SERVER['argv'][0] = 'buddy';
-
-// Find autoloader
-$autoloadPaths = [
-    __DIR__ . '/../vendor/autoload.php',           // Local development
-    __DIR__ . '/../../../autoload.php',            // Installed as dependency
-];
-
-$autoloader = null;
-foreach ($autoloadPaths as $path) {
-    if (file_exists($path)) {
-        $autoloader = $path;
-        break;
-    }
-}
-
-if ($autoloader === null) {
-    fwrite(STDERR, "Could not find autoloader. Run 'composer install' first.\n");
-    exit(1);
-}
-
-require $autoloader;
-
-// Load .env files from current directory and all parent directories
-$cwd = getcwd();
-if ($cwd !== false) {
-    BuddyCli\Services\EnvLoader::loadRecursive($cwd);
-}
-
-use BuddyCli\Application;
-
-$app = new Application();
-$app->run();
+exec php "$dir/buddy.php" "$@"
