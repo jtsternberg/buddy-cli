@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-05-27
+
+### Fixed
+
+- `bin/buddy` now neutralizes a host application's `PHPRC` before invoking PHP, so HTTPS requests no longer die with `cURL error 77` when run from a LocalWP-launched shell (or any environment that pins `openssl.cafile` / `curl.cainfo` to a path scoped to a different project). The launcher is now a POSIX `sh` wrapper that `unset PHPRC` and execs `bin/buddy.php` (the renamed original bootstrap). Symlink installs (`buddy self:install`, `composer global require`, Composer vendor proxies) all resolve correctly via manual symlink-chain walking. (#20)
+
 ## [1.6.0] - 2026-05-19
 
 ### Added

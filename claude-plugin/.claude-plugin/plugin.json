@@ -1,7 +1,7 @@
 {
   "name": "buddy-cli",
   "description": "Claude Code plugin for Buddy.works CI/CD pipeline management",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "author": {
     "name": "Justin Sternberg",
     "url": "https://github.com/jtsternberg/buddy-cli"
