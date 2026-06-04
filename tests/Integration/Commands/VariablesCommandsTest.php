@@ -95,8 +95,12 @@ class VariablesCommandsTest extends TestCase
         $this->mockBuddyService->method('getVariables')
             ->willReturn(['variables' => []]);
 
+        $captured = null;
         $this->mockBuddyService->method('createVariable')
-            ->willReturn(['id' => 42, 'key' => 'NODE_OPTIONS']);
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 42, 'key' => 'NODE_OPTIONS'];
+            });
 
         $command = $this->app->find('vars:set');
         $tester = new CommandTester($command);
@@ -111,6 +115,11 @@ class VariablesCommandsTest extends TestCase
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Created variable: NODE_OPTIONS', $output);
         $this->assertStringContainsString('ID: 42', $output);
+
+        // Pipeline scope emits exactly one scope object: pipeline.
+        $this->assertSame(['id' => 123], $captured['pipeline'] ?? null);
+        $this->assertArrayNotHasKey('action', $captured);
+        $this->assertArrayNotHasKey('project', $captured);
     }
 
     public function testVarsSetWithActionScopeCreatesVariable(): void
@@ -118,8 +127,12 @@ class VariablesCommandsTest extends TestCase
         $this->mockBuddyService->method('getVariables')
             ->willReturn(['variables' => []]);
 
+        $captured = null;
         $this->mockBuddyService->method('createVariable')
-            ->willReturn(['id' => 43, 'key' => 'DEBUG']);
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 43, 'key' => 'DEBUG'];
+            });
 
         $command = $this->app->find('vars:set');
         $tester = new CommandTester($command);
@@ -135,6 +148,42 @@ class VariablesCommandsTest extends TestCase
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Created variable: DEBUG', $output);
         $this->assertStringContainsString('ID: 43', $output);
+
+        // Action scope must emit ONLY the action scope object. Buddy's API rejects
+        // a payload carrying both `pipeline` and `action` ("Only one scope is allowed").
+        // --pipeline is routing/context for resolving the action, not a second scope.
+        $this->assertSame(['id' => 456], $captured['action'] ?? null);
+        $this->assertArrayNotHasKey('pipeline', $captured);
+        $this->assertArrayNotHasKey('project', $captured);
+    }
+
+    public function testVarsSetWithProjectScopeEmitsOnlyProjectScope(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 45, 'key' => 'NODE_ENV'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'my-project',
+            'key' => 'NODE_ENV',
+            'value' => 'production',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Created variable: NODE_ENV', $tester->getDisplay());
+
+        $this->assertSame(['name' => 'my-project'], $captured['project'] ?? null);
+        $this->assertArrayNotHasKey('pipeline', $captured);
+        $this->assertArrayNotHasKey('action', $captured);
     }
 
     public function testVarsSetWorkspaceScopeWhenNoScopeGiven(): void

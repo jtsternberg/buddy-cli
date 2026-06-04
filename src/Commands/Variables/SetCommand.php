@@ -23,10 +23,13 @@ class SetCommand extends BaseCommand
 Creates or updates an environment variable. If a variable with the same key
 exists at the same scope, it will be updated; otherwise a new one is created.
 
-Options:
-  -p, --project      Scope to a specific project
-      --pipeline     Scope to a specific pipeline ID
-      --action       Scope to a specific action ID (requires --pipeline)
+Scope selectors (choose at most one scope):
+  -p, --project      Scope the variable to a project (by name)
+      --pipeline     Scope the variable to a pipeline ID
+      --action       Scope the variable to an action ID (requires --pipeline)
+
+Other options:
+      --workspace    Workspace/domain to operate in (routing context, NOT a scope)
   -t, --type         Variable type: VAR (default), SSH_KEY, SSH_PUBLIC_KEY
   -e, --encrypted    Encrypt the value (cannot be read back)
   -s, --settable     Allow value override during manual pipeline run
@@ -35,8 +38,13 @@ Options:
 Scope hierarchy (most specific wins):
   action > pipeline > project > workspace
 
-Only ONE scope is allowed per variable (project OR pipeline, not both).
-If no scope is given, the variable is workspace-scoped.
+Only ONE scope is allowed per variable. --project is mutually exclusive with
+--pipeline/--action. For an action-scoped variable, pass BOTH --pipeline and
+--action: the pipeline routes to the action, and only the action scope is sent
+to the API. If no scope selector is given, the variable is workspace-scoped.
+
+--workspace is routing context (which workspace/domain to talk to), never a
+scope — it can accompany any scope without conflict.
 
 Values containing dashes (like --max-old-space-size=4096) require placing
 all options BEFORE the -- separator:
@@ -48,6 +56,7 @@ Examples:
   buddy vars:set DEBUG true --pipeline=12345 --settable
   buddy vars:set DEPLOY_KEY "..." --type=SSH_KEY --encrypted
   buddy vars:set --pipeline=12345 -- NODE_OPTIONS "--max-old-space-size=4096"
+  buddy vars:set --pipeline=506857 --action=1558732 -- NODE_OPTIONS "--max-old-space-size=8192"
 HELP);
 
         $this->addWorkspaceOption();
@@ -83,43 +92,45 @@ HELP);
             $data['description'] = $input->getOption('description');
         }
 
-        // Validate scope — only one allowed (action requires pipeline, so those pair together)
+        // Determine scope. The Buddy API accepts exactly ONE scope object on the
+        // variable (project, pipeline, action, or — implicitly — workspace). The
+        // scope selectors are --project, --pipeline, and --action. --workspace is
+        // pure routing context (the domain), never a scope.
         $hasProject = $input->getOption('project') !== null;
         $hasPipeline = $input->getOption('pipeline') !== null;
         $hasAction = $input->getOption('action') !== null;
 
+        // An action belongs to a pipeline, so --action needs --pipeline to route the
+        // lookup. The pipeline is context here, NOT a second scope object (see below).
         if ($hasAction && !$hasPipeline) {
             $output->writeln('<error>--action requires --pipeline. An action belongs to a specific pipeline.</error>');
             return self::FAILURE;
         }
 
+        // Project scope is a different (broader) scope than pipeline/action scope —
+        // a variable can only have one, so these are mutually exclusive.
         if ($hasProject && ($hasPipeline || $hasAction)) {
             $output->writeln('<error>Only one scope allowed. Use --project OR --pipeline/--action, not both.</error>');
             $output->writeln('<comment>Scope hierarchy: action > pipeline > project > workspace</comment>');
             return self::FAILURE;
         }
 
-        // Add scoping
-        if ($hasProject) {
-            $data['project'] = ['name' => $input->getOption('project')];
-        }
-        if ($hasPipeline) {
-            $data['pipeline'] = ['id' => (int) $input->getOption('pipeline')];
-        }
+        // Emit exactly one scope object (most specific wins). For an action-scoped
+        // variable, send ONLY the action reference — the action already belongs to a
+        // pipeline, so emitting `pipeline` too would trip the API's "Only one scope
+        // is allowed" error. --pipeline is used purely to scope the existing-variable
+        // lookup below.
+        $filters = [];
         if ($hasAction) {
             $data['action'] = ['id' => (int) $input->getOption('action')];
-        }
-
-        // Try to find existing variable by key
-        $filters = [];
-        if (isset($data['project'])) {
-            $filters['projectName'] = $data['project']['name'];
-        }
-        if (isset($data['pipeline'])) {
-            $filters['pipelineId'] = $data['pipeline']['id'];
-        }
-        if (isset($data['action'])) {
-            $filters['actionId'] = $data['action']['id'];
+            $filters['pipelineId'] = (int) $input->getOption('pipeline');
+            $filters['actionId'] = (int) $input->getOption('action');
+        } elseif ($hasPipeline) {
+            $data['pipeline'] = ['id' => (int) $input->getOption('pipeline')];
+            $filters['pipelineId'] = (int) $input->getOption('pipeline');
+        } elseif ($hasProject) {
+            $data['project'] = ['name' => $input->getOption('project')];
+            $filters['projectName'] = $input->getOption('project');
         }
 
         $existingId = $this->findVariableByKey($workspace, $key, $filters);
