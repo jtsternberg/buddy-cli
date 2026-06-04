@@ -18,9 +18,14 @@ Create a new release. Version can be provided as $1, or auto-detected from commi
      - **PATCH**: commits with "fix", "bug", "patch", "docs", "chore", or any other changes
    - Present the suggested version and let user confirm or override
 
-2. **Run pre-release checks**:
-   - `composer test` - All tests must pass
-   - `composer lint` - Code must be formatted
+2. **Run preflight checks** — invoke the `/preflight` command (`.claude/commands/preflight.md`)
+   and complete every check it defines:
+   - `composer test` — all tests must pass
+   - `composer lint` — code must be formatted
+   - README, public skill (`claude-plugin/skills/using-buddy-cli/*`), and `docs/`
+     are in sync with any CLI-surface changes since the last tag
+   - Do NOT proceed past this step if preflight reports **NOT READY**. Resolve the
+     blocking items (or get explicit confirmation to ship anyway) first.
 
 3. **Generate changelog content**:
    - Analyze commits and categorize under: Added, Changed, Fixed, Removed
