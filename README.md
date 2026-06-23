@@ -218,6 +218,8 @@ buddy vars:show <id>                      # Show variable details
 buddy vars:set <key> <value>              # Create or update variable
 buddy vars:set <key> <value> -p <project> # Scope to project
 buddy vars:set <key> <value> --encrypted  # Encrypt the value
+echo -n "$SECRET" | buddy vars:set <key> - --encrypted   # Read secret from stdin (keeps it off argv/history)
+buddy vars:set <key> --value-file=<path> --encrypted     # Read value from a file
 buddy vars:delete <id>                    # Delete variable (with confirmation)
 buddy vars:delete <id> --force            # Delete without confirmation
 ```

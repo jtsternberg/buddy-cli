@@ -228,6 +228,132 @@ class VariablesCommandsTest extends TestCase
         $this->assertStringContainsString('Updated variable: EXISTING_KEY', $tester->getDisplay());
     }
 
+    public function testVarsSetReadsValueFromStdinViaDashPositional(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 60, 'key' => 'API_KEY'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        // setInputs writes each entry followed by PHP_EOL, so the stream carries a
+        // trailing newline we expect the command to strip.
+        $tester->setInputs(['secret123']);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--encrypted' => true,
+            'key' => 'API_KEY',
+            'value' => '-',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertStringContainsString('Created variable: API_KEY', $tester->getDisplay());
+        // The secret came from stdin (never argv) with its trailing newline stripped.
+        $this->assertSame('secret123', $captured['value'] ?? null);
+        $this->assertTrue($captured['encrypted'] ?? false);
+    }
+
+    public function testVarsSetReadsValueFromStdinViaValueFileDash(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 61, 'key' => 'TOKEN'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->setInputs(['piped-secret']);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--value-file' => '-',
+            'key' => 'TOKEN',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertSame('piped-secret', $captured['value'] ?? null);
+    }
+
+    public function testVarsSetReadsValueFromFile(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 62, 'key' => 'FILE_KEY'];
+            });
+
+        $secretFile = $this->tempDir . '/secret.txt';
+        // Trailing newline (as most editors add) must be stripped.
+        file_put_contents($secretFile, "file-secret\n");
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--value-file' => $secretFile,
+            'key' => 'FILE_KEY',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertSame('file-secret', $captured['value'] ?? null);
+    }
+
+    public function testVarsSetRejectsBothValueAndValueFile(): void
+    {
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--value-file' => '/some/path',
+            'key' => 'CONFLICT',
+            'value' => 'literal',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Cannot use both', $tester->getDisplay());
+    }
+
+    public function testVarsSetRequiresAValueSource(): void
+    {
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            'key' => 'NO_VALUE',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('No value provided', $tester->getDisplay());
+    }
+
+    public function testVarsSetErrorsWhenValueFileMissing(): void
+    {
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--value-file' => $this->tempDir . '/does-not-exist.txt',
+            'key' => 'MISSING_FILE',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Could not read value file', $tester->getDisplay());
+    }
+
     public function testVarsSetJsonOutput(): void
     {
         $this->mockBuddyService->method('getVariables')

@@ -8,6 +8,7 @@ use BuddyCli\Commands\BaseCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\StreamableInputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class SetCommand extends BaseCommand
@@ -18,7 +19,7 @@ class SetCommand extends BaseCommand
             ->setName('vars:set')
             ->setDescription('Create or update an environment variable')
             ->addArgument('key', InputArgument::REQUIRED, 'Variable key')
-            ->addArgument('value', InputArgument::REQUIRED, 'Variable value')
+            ->addArgument('value', InputArgument::OPTIONAL, "Variable value. Use '-' to read from stdin, or omit it and pass --value-file.")
             ->setHelp(<<<'HELP'
 Creates or updates an environment variable. If a variable with the same key
 exists at the same scope, it will be updated; otherwise a new one is created.
@@ -28,12 +29,24 @@ Scope selectors (choose at most one scope):
       --pipeline     Scope the variable to a pipeline ID
       --action       Scope the variable to an action ID (requires --pipeline)
 
+Providing the value securely:
+  By default the value is a positional argument, which lands in your shell
+  history and is visible in the process list (ps aux). For secrets (especially
+  --encrypted variables), provide the value without it touching argv:
+      --value-file=<path>   Read the value from a file
+      --value-file=-        Read the value from stdin
+      vars:set KEY -        Bare '-' positional also reads from stdin
+  A single trailing newline is stripped, so 'echo secret | buddy vars:set ...'
+  works as expected. The literal positional value and --value-file are mutually
+  exclusive.
+
 Other options:
       --workspace    Workspace/domain to operate in (routing context, NOT a scope)
   -t, --type         Variable type: VAR (default), SSH_KEY, SSH_PUBLIC_KEY
   -e, --encrypted    Encrypt the value (cannot be read back)
   -s, --settable     Allow value override during manual pipeline run
   -d, --description  Add a description for the variable
+      --value-file   Read the value from a file (or '-' for stdin)
 
 Scope hierarchy (most specific wins):
   action > pipeline > project > workspace
@@ -52,6 +65,8 @@ all options BEFORE the -- separator:
 
 Examples:
   buddy vars:set API_KEY "secret123" --encrypted
+  echo -n "secret123" | buddy vars:set API_KEY - --encrypted
+  buddy vars:set API_KEY --value-file=./secret.txt --encrypted
   buddy vars:set NODE_ENV production --project=my-project
   buddy vars:set DEBUG true --pipeline=12345 --settable
   buddy vars:set DEPLOY_KEY "..." --type=SSH_KEY --encrypted
@@ -67,6 +82,7 @@ HELP);
         $this->addOption('encrypted', 'e', InputOption::VALUE_NONE, 'Encrypt the variable value');
         $this->addOption('settable', 's', InputOption::VALUE_NONE, 'Allow value to be set during manual run');
         $this->addOption('description', 'd', InputOption::VALUE_REQUIRED, 'Variable description');
+        $this->addOption('value-file', null, InputOption::VALUE_REQUIRED, "Read the value from a file, or '-' for stdin");
         parent::configure();
     }
 
@@ -74,7 +90,11 @@ HELP);
     {
         $workspace = $this->requireWorkspace($input);
         $key = $input->getArgument('key');
-        $value = $input->getArgument('value');
+
+        $value = $this->resolveValue($input, $output);
+        if ($value === null) {
+            return self::FAILURE;
+        }
 
         $data = [
             'key' => $key,
@@ -155,6 +175,77 @@ HELP);
 
         $output->writeln("<info>{$action} variable: {$key} (ID: {$result['id']})</info>");
         return self::SUCCESS;
+    }
+
+    /**
+     * Resolve the variable value from (in priority order) --value-file, a bare '-'
+     * positional (stdin), or the literal positional argument.
+     *
+     * Reading from stdin/file keeps secrets out of argv (ps aux) and shell history.
+     * Returns null and writes an error on any failure; callers should treat null as
+     * a FAILURE exit.
+     */
+    private function resolveValue(InputInterface $input, OutputInterface $output): ?string
+    {
+        $positional = $input->getArgument('value');
+        $valueFile = $input->getOption('value-file');
+
+        // A literal positional value and --value-file are two ways of saying the same
+        // thing; accepting both would be ambiguous about which wins.
+        if ($valueFile !== null && $positional !== null && $positional !== '-') {
+            $output->writeln('<error>Cannot use both a positional value and --value-file. Pick one.</error>');
+            return null;
+        }
+
+        // --value-file=- and the bare '-' positional both mean "read from stdin".
+        if ($valueFile === '-' || ($valueFile === null && $positional === '-')) {
+            return $this->stripTrailingNewline($this->readStdin($input));
+        }
+
+        if ($valueFile !== null) {
+            if (!is_file($valueFile) || !is_readable($valueFile)) {
+                $output->writeln("<error>Could not read value file: {$valueFile}</error>");
+                return null;
+            }
+            $contents = file_get_contents($valueFile);
+            if ($contents === false) {
+                $output->writeln("<error>Could not read value file: {$valueFile}</error>");
+                return null;
+            }
+            return $this->stripTrailingNewline($contents);
+        }
+
+        if ($positional === null) {
+            $output->writeln('<error>No value provided. Pass a value, use --value-file=<path>, or pipe via --value-file=- (or a bare \'-\').</error>');
+            return null;
+        }
+
+        return $positional;
+    }
+
+    /**
+     * Read all of stdin. Honors the input stream set by Symfony's CommandTester
+     * (StreamableInputInterface) so the command is testable, falling back to the
+     * real STDIN otherwise.
+     */
+    private function readStdin(InputInterface $input): string
+    {
+        $stream = $input instanceof StreamableInputInterface ? $input->getStream() : null;
+        $stream = $stream ?? \STDIN;
+
+        $contents = stream_get_contents($stream);
+
+        return $contents === false ? '' : $contents;
+    }
+
+    /**
+     * Strip exactly one trailing newline (\n, with an optional preceding \r) so that
+     * `echo secret | buddy vars:set ...` and editor-saved files don't smuggle a
+     * newline into the stored value. Intentional newlines beyond the last are kept.
+     */
+    private function stripTrailingNewline(string $value): string
+    {
+        return preg_replace('/\r?\n$/', '', $value, 1);
     }
 
     private function findVariableByKey(string $workspace, string $key, array $filters): ?int

@@ -110,7 +110,17 @@ buddy vars:list
 ```
 
 ### Set encrypted variable
+A positional value is visible in `ps aux` and saved to shell history. For
+secrets, read the value from stdin or a file so it never touches argv:
 ```bash
+# Preferred — value from stdin (bare '-' or --value-file=-):
+echo -n "$API_SECRET" | buddy vars:set API_SECRET - --encrypted
+printf %s "$API_SECRET" | buddy vars:set API_SECRET --value-file=- --encrypted
+
+# From a file:
+buddy vars:set API_SECRET --value-file=./secret.txt --encrypted
+
+# Insecure (avoid for real secrets — lands in history/process list):
 buddy vars:set API_SECRET "sensitive-value" --encrypted
 ```
 

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `vars:set` can now read the value from stdin or a file instead of a positional argument, keeping secrets out of the process list (`ps aux`) and shell history. Use a bare `-` positional or `--value-file=-` to read from stdin, or `--value-file=<path>` to read from a file (a single trailing newline is stripped). The literal positional value and `--value-file` are mutually exclusive. This closes a real exposure for `--encrypted` variables, where the plaintext secret previously had to be passed on argv.
+
 ## [1.6.2] - 2026-06-04
 
 ### Fixed

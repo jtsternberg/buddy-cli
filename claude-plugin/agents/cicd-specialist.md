@@ -68,6 +68,7 @@ buddy vars:set --pipeline=<id> -- KEY "value"
 - **Pipeline ID is positional** for `run`/`retry`/`cancel`, but **`--pipeline=`** for `executions:*` commands
 - **`vars:set` with values starting with `--`** needs all options first: `buddy vars:set --pipeline=X -- KEY "--value"`
 - **`vars:set` allows exactly ONE scope** — use `--project` OR `--pipeline`, not both
+- **`vars:set` secrets** — don't pass secret values positionally (visible in `ps aux`/shell history). Pipe via stdin (`echo -n "$SECRET" | buddy vars:set KEY - --encrypted`) or use `--value-file=<path>`. Positional value and `--value-file` are mutually exclusive.
 - **Wildcard pipelines** require `--branch=` when using `pipelines:run`
 
 ## Error Patterns

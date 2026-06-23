@@ -178,6 +178,20 @@ buddy vars:set KEY value --encrypted
 
 **Gotchas:**
 
+**Secrets — keep the value off argv and out of shell history:**
+A positional value is visible in `ps aux` and saved to shell history. For
+secrets (especially `--encrypted`), read the value from stdin or a file instead:
+```bash
+# stdin via bare '-' (or --value-file=-):
+echo -n "$SECRET" | buddy vars:set API_KEY - --encrypted
+printf %s "$SECRET" | buddy vars:set API_KEY --value-file=- --encrypted
+
+# from a file:
+buddy vars:set API_KEY --value-file=./secret.txt --encrypted
+```
+A single trailing newline is stripped (so `echo | ...` works). The literal
+positional value and `--value-file` are mutually exclusive.
+
 **Values containing `--` (e.g., Node.js flags):**
 Symfony Console parses `--max-old-space-size` as a CLI flag. All options MUST come BEFORE the `--` separator:
 ```bash
