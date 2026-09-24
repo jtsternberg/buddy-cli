@@ -29,6 +29,17 @@ class ApplicationTest extends TestCase
         $this->assertSame(Application::VERSION, $app->getVersion());
     }
 
+    // plugin.json is the version /publish-release bumps; VERSION silently drifted from it for several releases.
+    public function testVersionMatchesPluginManifest(): void
+    {
+        $manifest = json_decode(
+            (string) file_get_contents(__DIR__ . '/../../claude-plugin/.claude-plugin/plugin.json'),
+            true
+        );
+
+        $this->assertSame($manifest['version'], Application::VERSION);
+    }
+
     public function testApplicationRegistersCommands(): void
     {
         $app = new Application();

@@ -86,7 +86,8 @@ All commands support `--json` flag. Default is human-readable tables. JSON outpu
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   bd dolt pull
+   bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -122,7 +123,8 @@ bd create --title="..." --type=task --priority=2
 bd update <id> --status=in_progress
 bd close <id> --reason="Completed"
 bd close <id1> <id2>  # Close multiple issues at once
-bd sync               # Commit and push changes
+bd dolt pull          # Pull beads changes from the Dolt remote
+bd dolt push          # Push beads changes to the Dolt remote
 ```
 
 ### Workflow Pattern
@@ -131,7 +133,7 @@ bd sync               # Commit and push changes
 2. **Claim**: Use `bd update <id> --status=in_progress`
 3. **Work**: Implement the task
 4. **Complete**: Use `bd close <id>`
-5. **Sync**: Always run `bd sync` at session end
+5. **Sync**: Always run `bd dolt push` at session end
 
 ### Key Concepts
 
@@ -147,9 +149,9 @@ bd sync               # Commit and push changes
 ```bash
 git status              # Check what changed
 git add <files>         # Stage code changes
-bd sync                 # Commit beads changes
 git commit -m "..."     # Commit code
-bd sync                 # Commit any new beads changes
+bd dolt pull            # Pull beads changes
+bd dolt push            # Push beads changes
 git push                # Push to remote
 ```
 
@@ -159,7 +161,7 @@ git push                # Push to remote
 - Update status as you work (in_progress → closed)
 - Create new issues with `bd create` when you discover tasks
 - Use descriptive titles and set appropriate priority/type
-- Always `bd sync` before ending session
+- Always `bd dolt push` before ending session
 
 <!-- end-bv-agent-instructions -->
 

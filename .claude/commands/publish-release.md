@@ -36,14 +36,15 @@ Create a new release. Version can be provided as $1, or auto-detected from commi
    - Add section `## [X.Y.Z] - YYYY-MM-DD` (use today's date)
    - Insert the generated changelog content ($CHANGELOG_CONTENT) from step 3
 
-5. **Update plugin version**:
-   - Update the `"version"` field in `claude-plugin/.claude-plugin/plugin.json` to `X.Y.Z` (without the `v` prefix)
+5. **Update version strings** (both, to `X.Y.Z` without the `v` prefix — `ApplicationTest` fails if they differ):
+   - The `"version"` field in `claude-plugin/.claude-plugin/plugin.json`
+   - `Application::VERSION` in `src/Application.php` (what `buddy --version` prints)
 
 6. **Commit and tag**:
    ```bash
-   git add CHANGELOG.md claude-plugin/.claude-plugin/plugin.json
+   git add CHANGELOG.md claude-plugin/.claude-plugin/plugin.json src/Application.php
    git commit -m "Prepare release vX.Y.Z"
-   git tag vX.Y.Z
+   git tag -m "vX.Y.Z" vX.Y.Z
    ```
 
 7. **Push** (ask for confirmation first):
