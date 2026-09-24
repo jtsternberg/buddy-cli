@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-09-24
+
+### Changed
+
+- Require `guzzlehttp/guzzle` ^7.15.2 (with `guzzlehttp/psr7` 2.x) instead of Guzzle 6. The upstream `buddy-works/buddy-works-php-api` SDK is unmaintained and pins Guzzle `~6.0`, which kept projects that install buddy-cli stuck on Guzzle/psr7 versions with open security advisories.
+
+### Removed
+
+- The `buddy-works/buddy-works-php-api` dependency. Its code is now vendored in `src/Sdk/` under the `BuddyCli\Sdk` namespace (Apache-2.0; provenance and changes in `src/Sdk/README.md`). No CLI commands or options changed.
+
 ## [1.7.0] - 2026-06-23
 
 ### Added
