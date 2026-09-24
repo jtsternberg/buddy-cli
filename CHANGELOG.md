@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-09-24
+
+### Fixed
+
+- `buddy --version` reported `1.4.0` since v1.4.0; it now reports the actual release version. A test keeps it in step with the plugin manifest.
+
 ## [1.8.0] - 2026-09-24
 
 ### Changed
