@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BuddyCli\Api;
 
-use Buddy\Apis\Api;
-use Buddy\BuddyResponse;
+use BuddyCli\Sdk\Apis\Api;
+use BuddyCli\Sdk\BuddyResponse;
 
 /**
  * Variables API for managing environment variables in Buddy.

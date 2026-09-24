@@ -1,5 +1,7 @@
 # Buddy Works PHP SDK Reference
 
+> Upstream reference. buddy-cli vendors this SDK in `src/Sdk/` under the `BuddyCli\Sdk` namespace instead of installing it (see `src/Sdk/README.md`), so read `Buddy\` below as `BuddyCli\Sdk\`.
+
 ## Installation
 
 ```bash

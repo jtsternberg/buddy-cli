@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace BuddyCli\Api;
 
-use Buddy\Buddy;
-use Buddy\BuddyClient;
+use BuddyCli\Sdk\Buddy;
 
 /**
  * Extended Buddy client with additional API methods.
@@ -23,15 +22,9 @@ class ExtendedBuddy extends Buddy
     {
         parent::__construct($config);
 
-        // Access parent's private client via reflection
-        $reflection = new \ReflectionClass(Buddy::class);
-        $clientProperty = $reflection->getProperty('client');
-        /** @var BuddyClient $client */
-        $client = $clientProperty->getValue($this);
-
-        $this->extendedExecutions = new ExtendedExecutions($client, $config);
-        $this->variables = new VariablesApi($client, $config);
-        $this->pipelinesYaml = new PipelinesYamlApi($client, $config);
+        $this->extendedExecutions = new ExtendedExecutions($this->client, $config);
+        $this->variables = new VariablesApi($this->client, $config);
+        $this->pipelinesYaml = new PipelinesYamlApi($this->client, $config);
     }
 
     public function getApiExecutions(): ExtendedExecutions

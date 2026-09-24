@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BuddyCli\Services;
 
-use Buddy\Exceptions\BuddyResponseException;
 use BuddyCli\Api\ExtendedBuddy;
+use BuddyCli\Sdk\Exceptions\BuddyResponseException;
 
 class BuddyService
 {

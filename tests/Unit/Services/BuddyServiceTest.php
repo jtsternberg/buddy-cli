@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace BuddyCli\Tests\Unit\Services;
 
-use Buddy\Apis\Pipelines;
-use Buddy\Apis\Projects;
-use Buddy\Apis\Workspaces;
-use Buddy\BuddyResponse;
-use Buddy\Exceptions\BuddyResponseException;
 use BuddyCli\Api\ExtendedBuddy;
 use BuddyCli\Api\ExtendedExecutions;
 use BuddyCli\Api\PipelinesYamlApi;
+use BuddyCli\Sdk\Apis\Pipelines;
+use BuddyCli\Sdk\Apis\Projects;
+use BuddyCli\Sdk\Apis\Workspaces;
+use BuddyCli\Sdk\BuddyResponse;
+use BuddyCli\Sdk\Exceptions\BuddyResponseException;
 use BuddyCli\Services\BuddyService;
 use BuddyCli\Services\ConfigService;
 use BuddyCli\Tests\TestCase;

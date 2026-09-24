@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BuddyCli\Commands\Webhooks;
 
-use Buddy\Apis\Webhooks;
 use BuddyCli\Commands\BaseCommand;
+use BuddyCli\Sdk\Apis\Webhooks;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

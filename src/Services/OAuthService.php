@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BuddyCli\Services;
 
-use Buddy\BuddyOAuth;
+use BuddyCli\Sdk\BuddyOAuth;
 
 class OAuthService
 {

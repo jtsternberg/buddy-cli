@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BuddyCli\Api;
 
-use Buddy\Apis\Executions;
-use Buddy\BuddyResponse;
+use BuddyCli\Sdk\Apis\Executions;
+use BuddyCli\Sdk\BuddyResponse;
 
 /**
  * Extended Executions API with action logs support.

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BuddyCli\Tests\Integration\Commands;
 
-use Buddy\Exceptions\BuddyResponseException;
 use BuddyCli\Application;
+use BuddyCli\Sdk\Exceptions\BuddyResponseException;
 use BuddyCli\Services\BuddyService;
 use BuddyCli\Tests\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;

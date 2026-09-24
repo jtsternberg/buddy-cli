@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BuddyCli\Tests\Unit\Services;
 
-use Buddy\BuddyOAuth;
+use BuddyCli\Sdk\BuddyOAuth;
 use BuddyCli\Services\OAuthService;
 use BuddyCli\Tests\TestCase;
 

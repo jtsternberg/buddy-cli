@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PHP CLI tool for Buddy.works CI/CD pipelines, built on `buddy-works/buddy-works-php-api` and `symfony/console`. Package name: `jtsternberg/buddy-cli`.
+PHP CLI tool for Buddy.works CI/CD pipelines, built on a vendored copy of `buddy-works/buddy-works-php-api` (`src/Sdk/`) and `symfony/console`. Package name: `jtsternberg/buddy-cli`.
 
 ## Special Instructions
 
@@ -46,7 +46,7 @@ src/
 │   ├── Projects/            # projects:list, projects:show
 │   └── Config/              # config:show, config:set, config:clear
 ├── Services/
-│   ├── BuddyService.php     # Wraps buddy-works/buddy-works-php-api SDK
+│   ├── BuddyService.php     # Wraps the vendored Buddy SDK (src/Sdk)
 │   └── ConfigService.php    # Manages config from env vars and config files
 └── Output/
     ├── JsonFormatter.php    # --json flag output
@@ -55,7 +55,7 @@ src/
 
 ## Key Dependencies
 
-**buddy-works/buddy-works-php-api**: Handles all Buddy API calls. Throws `BuddyResponseException` (API errors) and `BuddySDKException` (SDK errors). Read vendor source for actual method signatures.
+**Buddy SDK (vendored in `src/Sdk/`, namespace `BuddyCli\Sdk`)**: Handles all Buddy API calls over `guzzlehttp/guzzle` ^7. Copied from `buddy-works/buddy-works-php-api` 1.4.0 because upstream is unmaintained and pins Guzzle 6; see `src/Sdk/README.md`. Throws `BuddyResponseException` (API errors) and `BuddySDKException` (SDK errors). Edit it directly when needed and note the change in that README.
 
 **symfony/console**: Command framework. Commands extend `Symfony\Component\Console\Command\Command`. Use `InputInterface` for args/options, `OutputInterface` for output.
 
