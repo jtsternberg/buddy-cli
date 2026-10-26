@@ -47,7 +47,7 @@ buddy pipelines:cancel <pipeline-id>
 ```
 
 ### pipelines:get
-Get pipeline config as YAML file.
+Get pipeline config as YAML file. Writes `pipeline-<id>.yaml` to the current directory unless `-o <path>` is given.
 ```bash
 buddy pipelines:get <pipeline-id>
 ```

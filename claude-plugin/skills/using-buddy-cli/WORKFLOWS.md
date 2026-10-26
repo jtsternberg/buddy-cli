@@ -84,7 +84,7 @@ buddy pipelines:run <id> --var ENV=staging --var DEBUG=true
 
 ### Export pipeline config
 ```bash
-buddy pipelines:get <id> > pipeline.yaml
+buddy pipelines:get <id> -o pipeline.yaml
 ```
 
 ### Create pipeline from config

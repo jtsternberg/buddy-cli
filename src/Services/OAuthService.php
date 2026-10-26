@@ -32,6 +32,7 @@ class OAuthService
             BuddyOAuth::SCOPE_EXECUTION_RUN,
             BuddyOAuth::SCOPE_EXECUTION_MANAGE,
             BuddyOAuth::SCOPE_USER_INFO,
+            BuddyOAuth::SCOPE_INTEGRATION_INFO,
             self::SCOPE_VARIABLE_INFO,
             self::SCOPE_VARIABLE_ADD,
             self::SCOPE_VARIABLE_MANAGE,

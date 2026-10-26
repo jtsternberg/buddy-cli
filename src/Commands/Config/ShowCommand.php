@@ -46,8 +46,8 @@ class ShowCommand extends BaseCommand
             $value = $data['value'];
             $source = $data['source'];
 
-            // Mask tokens for display
-            if (($key === 'token' || $key === 'refresh_token') && strlen($value) > 8) {
+            // Mask secrets for display
+            if (in_array($key, ['token', 'refresh_token', 'client_secret'], true) && strlen($value) > 8) {
                 $value = substr($value, 0, 4) . '...' . substr($value, -4);
             }
 

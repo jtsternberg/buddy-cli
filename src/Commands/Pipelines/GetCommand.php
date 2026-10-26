@@ -29,6 +29,9 @@ template workflows.
 Options:
   -o, --output  Output file path (default: pipeline-{id}.yaml)
 
+Without --output, the file is written to the current working directory.
+When exporting several pipelines, pass --output to keep them out of your repo.
+
 Examples:
   buddy pipelines:get 12345 --project=my-project
   buddy pipelines:get 12345 -o deploy-pipeline.yaml

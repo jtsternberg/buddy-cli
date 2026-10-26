@@ -68,6 +68,21 @@ class ConfigCommandsTest extends TestCase
         $this->assertStringContainsString('abcd...5678', $output);
     }
 
+    public function testConfigShowMasksClientSecret(): void
+    {
+        $setCommand = $this->app->find('config:set');
+        $setTester = new CommandTester($setCommand);
+        $setTester->execute(['key' => 'client_secret', 'value' => 'wxyz9876secret4321']);
+
+        $command = $this->app->find('config:show');
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $output = $tester->getDisplay();
+        $this->assertStringNotContainsString('wxyz9876secret4321', $output);
+        $this->assertStringContainsString('wxyz...4321', $output);
+    }
+
     public function testConfigShowJsonOutput(): void
     {
         $setCommand = $this->app->find('config:set');
