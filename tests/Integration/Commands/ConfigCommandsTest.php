@@ -99,6 +99,65 @@ class ConfigCommandsTest extends TestCase
         $this->assertSame('test-ws', $data['workspace']);
     }
 
+    private function setSecretToken(): void
+    {
+        $setTester = new CommandTester($this->app->find('config:set'));
+        $setTester->execute(['key' => 'token', 'value' => 'abcd1234efgh5678']);
+    }
+
+    public function testConfigShowJsonWithSecretsRefusesWhenNonInteractive(): void
+    {
+        $this->setSecretToken();
+
+        $tester = new CommandTester($this->app->find('config:show'));
+        $status = $tester->execute(['--json' => true], ['interactive' => false, 'capture_stderr_separately' => true]);
+
+        $this->assertSame(1, $status);
+        $this->assertSame('', $tester->getDisplay());
+        $this->assertStringContainsString('--yes', $tester->getErrorOutput());
+        $this->assertStringNotContainsString('abcd1234efgh5678', $tester->getErrorOutput());
+    }
+
+    public function testConfigShowJsonWithSecretsPrintsWithYes(): void
+    {
+        $this->setSecretToken();
+
+        $tester = new CommandTester($this->app->find('config:show'));
+        $status = $tester->execute(['--json' => true, '--yes' => true], ['interactive' => false]);
+
+        $this->assertSame(0, $status);
+        $data = json_decode($tester->getDisplay(), true);
+        $this->assertSame('abcd1234efgh5678', $data['token']);
+    }
+
+    public function testConfigShowJsonWithSecretsPrintsAfterConfirming(): void
+    {
+        $this->setSecretToken();
+
+        $tester = new CommandTester($this->app->find('config:show'));
+        $tester->setInputs(['y']);
+        $status = $tester->execute(['--json' => true], ['capture_stderr_separately' => true]);
+
+        $this->assertSame(0, $status);
+        // The prompt goes to stderr so stdout stays parseable JSON.
+        $data = json_decode($tester->getDisplay(), true);
+        $this->assertSame('abcd1234efgh5678', $data['token']);
+        $this->assertStringContainsString('[y/N]', $tester->getErrorOutput());
+    }
+
+    public function testConfigShowJsonWithSecretsAbortsWhenDeclined(): void
+    {
+        $this->setSecretToken();
+
+        $tester = new CommandTester($this->app->find('config:show'));
+        $tester->setInputs(['n']);
+        $status = $tester->execute(['--json' => true], ['capture_stderr_separately' => true]);
+
+        $this->assertSame(1, $status);
+        $this->assertSame('', $tester->getDisplay());
+        $this->assertStringContainsString('--yes', $tester->getErrorOutput());
+    }
+
     // config:set tests
 
     public function testConfigSetValidKey(): void

@@ -247,6 +247,7 @@ buddy projects:show <project-name>
 Show current configuration.
 ```bash
 buddy config:show
+buddy config:show --json --yes   # unmasked secrets; without --yes it prompts (or refuses with no TTY)
 ```
 
 ### config:set

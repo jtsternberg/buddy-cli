@@ -7,15 +7,33 @@ namespace BuddyCli\Commands\Config;
 use BuddyCli\Commands\BaseCommand;
 use BuddyCli\Output\TableFormatter;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class ShowCommand extends BaseCommand
 {
+    private const SECRET_KEYS = ['token', 'refresh_token', 'client_secret'];
+
     protected function configure(): void
     {
         $this
             ->setName('config:show')
-            ->setDescription('Show current configuration');
+            ->setDescription('Show current configuration')
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Print unmasked secrets with --json without confirming')
+            ->setHelp(<<<'HELP'
+Shows the current configuration and where each value comes from.
+
+Secrets (token, refresh_token, client_secret) are masked in the table. With
+<info>--json</info> they are printed unmasked, so the command asks for
+confirmation first. Pass <info>--yes</info> to skip it; without a terminal to
+confirm on, <info>--json</info> refuses to print secrets unless <info>--yes</info> is given.
+
+Examples:
+  buddy config:show
+  buddy config:show --json --yes
+HELP);
 
         parent::configure();
     }
@@ -26,7 +44,11 @@ class ShowCommand extends BaseCommand
         $configWithSources = $configService->allWithSources();
 
         if ($this->isJsonOutput($input)) {
-            $this->outputJson($output, $configService->all());
+            $config = $configService->all();
+            if ($this->hasSecrets($config) && !$this->confirmSecrets($input, $output)) {
+                return self::FAILURE;
+            }
+            $this->outputJson($output, $config);
             return self::SUCCESS;
         }
 
@@ -47,7 +69,7 @@ class ShowCommand extends BaseCommand
             $source = $data['source'];
 
             // Mask secrets for display
-            if (in_array($key, ['token', 'refresh_token', 'client_secret'], true) && strlen($value) > 8) {
+            if (in_array($key, self::SECRET_KEYS, true) && strlen($value) > 8) {
                 $value = substr($value, 0, 4) . '...' . substr($value, -4);
             }
 
@@ -73,6 +95,42 @@ class ShowCommand extends BaseCommand
     /**
      * Get a relative path from cwd to the given absolute path.
      */
+    private function hasSecrets(array $config): bool
+    {
+        foreach (self::SECRET_KEYS as $key) {
+            if (!empty($config[$key])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function confirmSecrets(InputInterface $input, OutputInterface $output): bool
+    {
+        if ($input->getOption('yes')) {
+            return true;
+        }
+
+        // stderr keeps stdout clean for JSON consumers.
+        $errorOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+
+        // No terminal to confirm on usually means an agent or script, where
+        // printed secrets land in logs and transcripts. Refuse instead of
+        // proceeding the way the delete commands do.
+        if (!$input->isInteractive()) {
+            $errorOutput->writeln('<error>config:show --json prints unmasked secrets. Pass --yes to confirm.</error>');
+            return false;
+        }
+
+        $question = new ConfirmationQuestion('JSON output includes unmasked secrets. Print them? [y/N] ', false);
+        if (!$this->getHelper('question')->ask($input, $errorOutput, $question)) {
+            $errorOutput->writeln('<comment>Cancelled. Pass --yes to skip this prompt.</comment>');
+            return false;
+        }
+
+        return true;
+    }
+
     private function getRelativePath(string $absolutePath): string
     {
         $cwd = getcwd();
