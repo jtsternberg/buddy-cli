@@ -47,7 +47,7 @@ use Symfony\Component\Console\Application as ConsoleApplication;
 
 class Application extends ConsoleApplication
 {
-    public const VERSION = '1.8.2';
+    public const VERSION = '1.9.0';
 
     private ConfigService $configService;
     private ?BuddyService $buddyService = null;

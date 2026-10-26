@@ -228,6 +228,7 @@ buddy vars:delete <id> --force            # Delete without confirmation
 
 ```bash
 buddy config:show                         # Show current configuration
+buddy config:show --json --yes            # JSON with unmasked secrets (prompts without --yes)
 buddy config:set <key> <value>            # Set configuration value
 buddy config:clear                        # Clear all configuration
 buddy config:validate                     # Validate config is complete
