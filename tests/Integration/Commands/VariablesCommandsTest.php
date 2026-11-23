@@ -379,4 +379,173 @@ class VariablesCommandsTest extends TestCase
         $this->assertSame(50, $data['id']);
         $this->assertSame('MY_KEY', $data['key']);
     }
+
+    // vars:set file fields (SSH_KEY and other file-backed types)
+
+    public function testVarsSetSshKeyRequiresFilePlace(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('createVariable');
+        $this->mockBuddyService->expects($this->never())->method('updateVariable');
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--type' => 'SSH_KEY',
+            'key' => 'DEPLOY_KEY',
+            'value' => 'not-a-real-key',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('--file-place', $tester->getDisplay());
+    }
+
+    public function testVarsSetSshKeySendsFileFields(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 77, 'key' => 'DEPLOY_KEY'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--pipeline' => '123',
+            '--type' => 'SSH_KEY',
+            '--file-place' => 'container',
+            '--file-path' => '~/.ssh/id_deploy',
+            '--file-chmod' => '600',
+            'key' => 'DEPLOY_KEY',
+            'value' => 'not-a-real-key',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertSame('SSH_KEY', $captured['type']);
+        $this->assertSame('CONTAINER', $captured['file_place']);
+        $this->assertSame('~/.ssh/id_deploy', $captured['file_path']);
+        $this->assertSame('600', $captured['file_chmod']);
+    }
+
+    public function testVarsSetFilePlaceNoneOmitsPathAndChmod(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 78, 'key' => 'DEPLOY_KEY'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--type' => 'SSH_KEY',
+            '--file-place' => 'NONE',
+            'key' => 'DEPLOY_KEY',
+            'value' => 'not-a-real-key',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertSame('NONE', $captured['file_place']);
+        $this->assertArrayNotHasKey('file_path', $captured);
+        $this->assertArrayNotHasKey('file_chmod', $captured);
+    }
+
+    public function testVarsSetFilePlaceContainerRequiresPathAndChmod(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('createVariable');
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--type' => 'SSH_KEY',
+            '--file-place' => 'CONTAINER',
+            'key' => 'DEPLOY_KEY',
+            'value' => 'not-a-real-key',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('--file-path', $output);
+        $this->assertStringContainsString('--file-chmod', $output);
+    }
+
+    public function testVarsSetRejectsUnknownFilePlace(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('createVariable');
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--type' => 'SSH_KEY',
+            '--file-place' => 'DISK',
+            'key' => 'DEPLOY_KEY',
+            'value' => 'not-a-real-key',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('CONTAINER or NONE', $tester->getDisplay());
+    }
+
+    public function testVarsSetPlainVarSendsNoFileFields(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 79, 'key' => 'PLAIN'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute(['--workspace' => 'ws', 'key' => 'PLAIN', 'value' => 'x']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertArrayNotHasKey('file_place', $captured);
+        $this->assertArrayNotHasKey('file_path', $captured);
+        $this->assertArrayNotHasKey('file_chmod', $captured);
+    }
+
+    // vars:show SSH key public half
+
+    public function testVarsShowDisplaysSshKeyPublicValueAndFingerprint(): void
+    {
+        $this->mockBuddyService->method('getVariable')->willReturn([
+            'id' => 77,
+            'key' => 'DEPLOY_KEY',
+            'type' => 'SSH_KEY',
+            'encrypted' => true,
+            'value' => '!encrypted xyz',
+            'file_place' => 'CONTAINER',
+            'file_path' => '~/.ssh/id_deploy',
+            'file_chmod' => '600',
+            'public_value' => 'ssh-ed25519 AAAAfakepublic buddy',
+            'key_fingerprint' => 'SHA256:fakefingerprint',
+        ]);
+
+        $command = $this->app->find('vars:show');
+        $tester = new CommandTester($command);
+        $tester->execute(['--workspace' => 'ws', 'variable-id' => '77']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('ssh-ed25519 AAAAfakepublic buddy', $output);
+        $this->assertStringContainsString('SHA256:fakefingerprint', $output);
+        $this->assertStringContainsString('~/.ssh/id_deploy', $output);
+        $this->assertStringNotContainsString('!encrypted', $output);
+    }
 }

@@ -166,6 +166,9 @@ Show variable details.
 ```bash
 buddy vars:show <var-id>
 ```
+For SSH_KEY variables it also shows `public_value` (the public half, readable
+even when the key is encrypted) and `key_fingerprint`. `--json` prints the full
+API response.
 
 ### vars:set
 Create or update a variable.
@@ -213,6 +216,16 @@ buddy vars:set KEY val --project=foo --pipeline=123
 buddy vars:set KEY val --pipeline=123
 buddy vars:set KEY val --project=foo
 buddy vars:set KEY val                    # workspace scope (default)
+```
+
+**SSH keys need `--file-place`:**
+`--type=SSH_KEY` (and `SSH_PUBLIC_KEY`) fails without `--file-place`. `CONTAINER`
+copies the key into the action container each run and needs `--file-path`
+(starts with `/` or `~`) and `--file-chmod`; `NONE` only makes it usable as an
+action parameter.
+```bash
+buddy vars:set DEPLOY_KEY --value-file=./id_deploy --type=SSH_KEY --encrypted \
+  --pipeline=123 --file-place=CONTAINER --file-path=~/.ssh/id_deploy --file-chmod=600
 ```
 
 **Action-level variables:** Use `--action=<id>` with `--pipeline=<id>` to scope to a specific action:

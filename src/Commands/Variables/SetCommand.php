@@ -47,6 +47,13 @@ Other options:
   -s, --settable     Allow value override during manual pipeline run
   -d, --description  Add a description for the variable
       --value-file   Read the value from a file (or '-' for stdin)
+      --file-place   CONTAINER or NONE. Required for SSH_KEY and SSH_PUBLIC_KEY.
+                     CONTAINER copies the key into the action container each
+                     run; NONE only makes it usable as an action parameter.
+      --file-path    Container path for the copied file (starts with / or ~).
+                     Required with --file-place=CONTAINER.
+      --file-chmod   Permissions for the copied file, e.g. 600.
+                     Required with --file-place=CONTAINER.
 
 Scope hierarchy (most specific wins):
   action > pipeline > project > workspace
@@ -69,7 +76,9 @@ Examples:
   buddy vars:set API_KEY --value-file=./secret.txt --encrypted
   buddy vars:set NODE_ENV production --project=my-project
   buddy vars:set DEBUG true --pipeline=12345 --settable
-  buddy vars:set DEPLOY_KEY "..." --type=SSH_KEY --encrypted
+  buddy vars:set DEPLOY_KEY --value-file=./id_deploy --type=SSH_KEY --encrypted \
+      --file-place=CONTAINER --file-path=~/.ssh/id_deploy --file-chmod=600
+  buddy vars:set DEPLOY_KEY --value-file=./id_deploy --type=SSH_KEY --encrypted --file-place=NONE
   buddy vars:set --pipeline=12345 -- NODE_OPTIONS "--max-old-space-size=4096"
   buddy vars:set --pipeline=506857 --action=1558732 -- NODE_OPTIONS "--max-old-space-size=8192"
 HELP);
@@ -83,6 +92,9 @@ HELP);
         $this->addOption('settable', 's', InputOption::VALUE_NONE, 'Allow value to be set during manual run');
         $this->addOption('description', 'd', InputOption::VALUE_REQUIRED, 'Variable description');
         $this->addOption('value-file', null, InputOption::VALUE_REQUIRED, "Read the value from a file, or '-' for stdin");
+        $this->addOption('file-place', null, InputOption::VALUE_REQUIRED, 'CONTAINER or NONE (required for SSH_KEY / SSH_PUBLIC_KEY)');
+        $this->addOption('file-path', null, InputOption::VALUE_REQUIRED, 'Container path for the key file (with --file-place=CONTAINER)');
+        $this->addOption('file-chmod', null, InputOption::VALUE_REQUIRED, 'Permissions for the key file, e.g. 600 (with --file-place=CONTAINER)');
         parent::configure();
     }
 
@@ -90,6 +102,11 @@ HELP);
     {
         $workspace = $this->requireWorkspace($input);
         $key = $input->getArgument('key');
+
+        $fileFields = $this->resolveFileFields($input, $output);
+        if ($fileFields === null) {
+            return self::FAILURE;
+        }
 
         $value = $this->resolveValue($input, $output);
         if ($value === null) {
@@ -111,6 +128,7 @@ HELP);
         if ($input->getOption('description') !== null) {
             $data['description'] = $input->getOption('description');
         }
+        $data += $fileFields;
 
         // Determine scope. The Buddy API accepts exactly ONE scope object on the
         // variable (project, pipeline, action, or — implicitly — workspace). The
@@ -175,6 +193,49 @@ HELP);
 
         $output->writeln("<info>{$action} variable: {$key} (ID: {$result['id']})</info>");
         return self::SUCCESS;
+    }
+
+    /**
+     * Validate --file-place/--file-path/--file-chmod and return the API fields to
+     * send (only those given). Returns null and writes an error on invalid input.
+     *
+     * No default file_place for key types: where a private key lands in the
+     * container is a security decision, so the caller must state it.
+     */
+    private function resolveFileFields(InputInterface $input, OutputInterface $output): ?array
+    {
+        $type = strtoupper((string) $input->getOption('type'));
+        $place = $input->getOption('file-place');
+        $path = $input->getOption('file-path');
+        $chmod = $input->getOption('file-chmod');
+
+        // The API refuses these types without file_place ("File place cannot be empty").
+        if ($place === null && in_array($type, ['SSH_KEY', 'SSH_PUBLIC_KEY'], true)) {
+            $output->writeln("<error>--type={$type} requires --file-place=CONTAINER (with --file-path and --file-chmod) or --file-place=NONE.</error>");
+            return null;
+        }
+
+        $fields = [];
+        if ($place !== null) {
+            $place = strtoupper($place);
+            if (!in_array($place, ['CONTAINER', 'NONE'], true)) {
+                $output->writeln('<error>--file-place must be CONTAINER or NONE.</error>');
+                return null;
+            }
+            if ($place === 'CONTAINER' && ($path === null || $chmod === null)) {
+                $output->writeln('<error>--file-place=CONTAINER requires both --file-path and --file-chmod.</error>');
+                return null;
+            }
+            $fields['file_place'] = $place;
+        }
+        if ($path !== null) {
+            $fields['file_path'] = $path;
+        }
+        if ($chmod !== null) {
+            $fields['file_chmod'] = $chmod;
+        }
+
+        return $fields;
     }
 
     /**

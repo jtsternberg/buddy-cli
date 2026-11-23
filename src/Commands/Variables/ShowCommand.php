@@ -22,7 +22,9 @@ class ShowCommand extends BaseCommand
 Displays detailed information about a specific environment variable.
 
 Shows ID, key, type, encryption status, settable flag, description, and scope.
-For non-encrypted variables, the value is also displayed.
+For non-encrypted variables, the value is also displayed. For SSH_KEY variables,
+the file placement, public key (public_value) and key fingerprint are shown when
+the API returns them. --json prints the full API response.
 
 Example:
   buddy vars:show 12345
@@ -56,6 +58,21 @@ HELP);
 
         if (!($variable['encrypted'] ?? false) && isset($variable['value'])) {
             $data['Value'] = $variable['value'];
+        }
+
+        // File-backed types (SSH_KEY etc.). public_value is the public half of an
+        // SSH key, readable even when the private value is encrypted.
+        $optional = [
+            'file_place' => 'File Place',
+            'file_path' => 'File Path',
+            'file_chmod' => 'File Chmod',
+            'public_value' => 'Public Key',
+            'key_fingerprint' => 'Fingerprint',
+        ];
+        foreach ($optional as $field => $label) {
+            if (isset($variable[$field]) && $variable[$field] !== '') {
+                $data[$label] = $variable[$field];
+            }
         }
 
         TableFormatter::keyValue($output, $data, "Variable: {$variable['key']}");

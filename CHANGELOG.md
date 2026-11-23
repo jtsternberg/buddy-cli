@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `vars:set` takes `--file-place` (`CONTAINER` or `NONE`), `--file-path` and `--file-chmod` for file-backed variables. `--type=SSH_KEY` and `--type=SSH_PUBLIC_KEY` now require `--file-place`; the API refused them with "File place cannot be empty".
+- `vars:show` displays the file placement, `public_value` (the SSH key's public half) and `key_fingerprint` when the API returns them.
+
 ## [1.9.0] - 2026-10-26
 
 ### Changed
