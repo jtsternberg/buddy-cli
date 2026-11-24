@@ -84,7 +84,8 @@ class BuddyClient
             ],
         ];
         if (isset($body)) {
-            $options['json'] = $body;
+            // json_encode([]) is "[]", which Buddy rejects ("Invalid JSON value of ''"); every Buddy body is an object.
+            $options['json'] = $body === [] ? new \stdClass() : $body;
         }
 
         return $this->request($url, $method, $options);

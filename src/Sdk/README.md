@@ -9,3 +9,4 @@ Changes from upstream:
 - Namespace `Buddy\` renamed to `BuddyCli\Sdk\` so it cannot collide with the upstream package if a consumer also installs it.
 - `Buddy::$client` is `protected` (was `private`) so `BuddyCli\Api\ExtendedBuddy` can share the client without reflection.
 - Reformatted by the project's Pint config.
+- `BuddyClient::requestJson` sends an empty body array as `{}` instead of `[]`; Buddy rejects a JSON array body ("Invalid JSON value of ''"), which broke `pipelines:run` with no options.
