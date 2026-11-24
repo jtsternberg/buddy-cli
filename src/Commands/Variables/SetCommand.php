@@ -37,7 +37,8 @@ Providing the value securely:
       --value-file=-        Read the value from stdin
       vars:set KEY -        Bare '-' positional also reads from stdin
   A single trailing newline is stripped, so 'echo secret | buddy vars:set ...'
-  works as expected. The literal positional value and --value-file are mutually
+  works as expected. SSH_KEY and SSH_PUBLIC_KEY values keep it (OpenSSH needs
+  the key's final newline). The literal positional value and --value-file are mutually
   exclusive.
 
 Other options:
@@ -260,7 +261,7 @@ HELP);
 
         // --value-file=- and the bare '-' positional both mean "read from stdin".
         if ($valueFile === '-' || ($valueFile === null && $positional === '-')) {
-            return $this->stripTrailingNewline($this->readStdin($input));
+            return $this->normalizeValue($this->readStdin($input), $input);
         }
 
         if ($valueFile !== null) {
@@ -273,7 +274,7 @@ HELP);
                 $output->writeln("<error>Could not read value file: {$valueFile}</error>");
                 return null;
             }
-            return $this->stripTrailingNewline($contents);
+            return $this->normalizeValue($contents, $input);
         }
 
         if ($positional === null) {
@@ -297,6 +298,20 @@ HELP);
         $contents = stream_get_contents($stream);
 
         return $contents === false ? '' : $contents;
+    }
+
+    /**
+     * Key types keep their trailing newline: OpenSSH rejects a private key whose
+     * final newline is missing ("Load key ... error in libcrypto"). Other types
+     * are stripped.
+     */
+    private function normalizeValue(string $value, InputInterface $input): string
+    {
+        $type = strtoupper((string) $input->getOption('type'));
+
+        return in_array($type, ['SSH_KEY', 'SSH_PUBLIC_KEY'], true)
+            ? $value
+            : $this->stripTrailingNewline($value);
     }
 
     /**

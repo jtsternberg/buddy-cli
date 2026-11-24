@@ -312,6 +312,64 @@ class VariablesCommandsTest extends TestCase
         $this->assertSame('file-secret', $captured['value'] ?? null);
     }
 
+    public function testVarsSetSshKeyFromFileKeepsTrailingNewline(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 63, 'key' => 'DEPLOY_KEY'];
+            });
+
+        $keyFile = $this->tempDir . '/id_deploy';
+        $key = "-----BEGIN OPENSSH PRIVATE KEY-----\nnot-a-real-key\n-----END OPENSSH PRIVATE KEY-----\n";
+        file_put_contents($keyFile, $key);
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--type' => 'SSH_KEY',
+            '--file-place' => 'NONE',
+            '--value-file' => $keyFile,
+            'key' => 'DEPLOY_KEY',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertSame($key, $captured['value'] ?? null);
+    }
+
+    public function testVarsSetSshPublicKeyFromStdinKeepsTrailingNewline(): void
+    {
+        $this->mockBuddyService->method('getVariables')
+            ->willReturn(['variables' => []]);
+
+        $captured = null;
+        $this->mockBuddyService->method('createVariable')
+            ->willReturnCallback(function (string $workspace, array $data) use (&$captured) {
+                $captured = $data;
+                return ['id' => 64, 'key' => 'DEPLOY_PUB'];
+            });
+
+        $command = $this->app->find('vars:set');
+        $tester = new CommandTester($command);
+        // setInputs appends PHP_EOL, which must survive for key types.
+        $tester->setInputs(['ssh-ed25519 AAAA not-a-real-key']);
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--type' => 'SSH_PUBLIC_KEY',
+            '--file-place' => 'NONE',
+            '--value-file' => '-',
+            'key' => 'DEPLOY_PUB',
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        $this->assertSame('ssh-ed25519 AAAA not-a-real-key' . PHP_EOL, $captured['value'] ?? null);
+    }
+
     public function testVarsSetRejectsBothValueAndValueFile(): void
     {
         $command = $this->app->find('vars:set');
