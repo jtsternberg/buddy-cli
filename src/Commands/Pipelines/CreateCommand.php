@@ -20,14 +20,15 @@ class CreateCommand extends BaseCommand
             ->setDescription('Create a new pipeline (from YAML file or flags)')
             ->addArgument('file', InputArgument::OPTIONAL, 'YAML file path (optional — omit to use flags instead)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Pipeline name (flag-based mode)')
-            ->addOption('on', null, InputOption::VALUE_REQUIRED, 'Trigger mode: MANUAL, ON_EVERY_PUSH, SCHEDULED (flag-based mode)')
-            ->addOption('refs', null, InputOption::VALUE_REQUIRED, 'Ref name / branch pattern, e.g. refs/heads/main (flag-based mode)')
+            ->addOption('on', null, InputOption::VALUE_REQUIRED, 'Trigger: MANUAL (default) or ON_EVERY_PUSH (needs --refs). SCHEDULED needs a YAML file (flag-based mode)')
+            ->addOption('refs', null, InputOption::VALUE_REQUIRED, 'Branch ref, e.g. refs/heads/main: the branch a MANUAL run uses, or the branch whose pushes trigger ON_EVERY_PUSH (flag-based mode)')
             ->setHelp(<<<'HELP'
 Creates a new pipeline. Supports two modes:
 
 <comment>Flag-based (quick creation):</comment>
   buddy pipelines:create --name="Deploy to Production" --on=MANUAL --refs=refs/heads/main
   buddy pipelines:create --name="Deploy to Production" --on=MANUAL --refs=refs/heads/main --json
+  buddy pipelines:create --name="CI" --on=ON_EVERY_PUSH --refs=refs/heads/main
 
 <comment>YAML file (full configuration):</comment>
   buddy pipelines:create pipeline.yaml
@@ -116,17 +117,32 @@ HELP);
             return self::FAILURE;
         }
 
-        $triggerMode = $input->getOption('on');
+        $triggerMode = strtoupper((string) ($input->getOption('on') ?? 'MANUAL'));
         $refs = $input->getOption('refs');
 
+        // The API dropped trigger_mode/ref_name and silently ignores them:
+        // a manual pipeline's branch is `refs`, a push trigger is a PUSH event.
         $pipelineData = ['name' => $name];
 
-        if (!empty($triggerMode)) {
-            $pipelineData['trigger_mode'] = strtoupper($triggerMode);
-        }
-
-        if (!empty($refs)) {
-            $pipelineData['ref_name'] = $refs;
+        switch ($triggerMode) {
+            case 'MANUAL':
+                if (!empty($refs)) {
+                    $pipelineData['refs'] = [$refs];
+                }
+                break;
+            case 'ON_EVERY_PUSH':
+                if (empty($refs)) {
+                    $output->writeln('<error>--on=ON_EVERY_PUSH needs --refs to say which branch pushes trigger it, e.g. --refs=refs/heads/main</error>');
+                    return self::FAILURE;
+                }
+                $pipelineData['events'] = [['type' => 'PUSH', 'refs' => [$refs]]];
+                break;
+            case 'SCHEDULED':
+                $output->writeln('<error>--on=SCHEDULED needs a cron expression, which has no flag. Create it from a YAML file instead.</error>');
+                return self::FAILURE;
+            default:
+                $output->writeln("<error>Unknown --on value '{$triggerMode}'. Use MANUAL, ON_EVERY_PUSH or SCHEDULED.</error>");
+                return self::FAILURE;
         }
 
         try {

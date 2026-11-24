@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `vars:set` takes `--file-place` (`CONTAINER` or `NONE`), `--file-path` and `--file-chmod` for file-backed variables. `--type=SSH_KEY` and `--type=SSH_PUBLIC_KEY` now require `--file-place`; the API refused them with "File place cannot be empty".
 - `vars:show` displays the file placement, `public_value` (the SSH key's public half) and `key_fingerprint` when the API returns them.
 
+### Fixed
+
+- `pipelines:create --on/--refs` sent `trigger_mode` and `ref_name`, which Buddy's API no longer reads, so every flag-created pipeline came out manual with no branch. `--refs` now sets the pipeline's `refs`, and `--on=ON_EVERY_PUSH` adds a `PUSH` event for that ref (it now requires `--refs`). `--on=SCHEDULED` errors and points to the YAML file mode, since there is no cron flag.
+
 ## [1.9.0] - 2026-10-26
 
 ### Changed

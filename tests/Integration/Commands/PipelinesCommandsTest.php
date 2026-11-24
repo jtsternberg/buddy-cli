@@ -1104,10 +1104,9 @@ YAML;
             ->method('createPipeline')
             ->with('ws', 'proj', [
                 'name' => 'My Pipeline',
-                'trigger_mode' => 'MANUAL',
-                'ref_name' => 'refs/heads/main',
+                'refs' => ['refs/heads/main'],
             ])
-            ->willReturn(['id' => 55, 'name' => 'My Pipeline', 'trigger_mode' => 'MANUAL']);
+            ->willReturn(['id' => 55, 'name' => 'My Pipeline', 'refs' => ['refs/heads/main']]);
 
         $command = $this->app->find('pipelines:create');
         $tester = new CommandTester($command);
@@ -1145,13 +1144,13 @@ YAML;
         $this->assertStringContainsString('ID: 10', $tester->getDisplay());
     }
 
-    public function testPipelinesCreateFromFlagsNormalizesOnToUppercase(): void
+    public function testPipelinesCreateFromFlagsOnEveryPushSendsPushEvent(): void
     {
         $this->mockBuddyService->expects($this->once())
             ->method('createPipeline')
             ->with('ws', 'proj', [
                 'name' => 'My Pipeline',
-                'trigger_mode' => 'ON_EVERY_PUSH',
+                'events' => [['type' => 'PUSH', 'refs' => ['refs/heads/main']]],
             ])
             ->willReturn(['id' => 20, 'name' => 'My Pipeline']);
 
@@ -1162,14 +1161,63 @@ YAML;
             '--project' => 'proj',
             '--name' => 'My Pipeline',
             '--on' => 'on_every_push',
+            '--refs' => 'refs/heads/main',
         ]);
 
         $this->assertSame(0, $tester->getStatusCode());
     }
 
+    public function testPipelinesCreateFromFlagsOnEveryPushRequiresRefs(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('createPipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:create'));
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'My Pipeline',
+            '--on' => 'ON_EVERY_PUSH',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('--refs', $tester->getDisplay());
+    }
+
+    public function testPipelinesCreateFromFlagsScheduledPointsToYaml(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('createPipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:create'));
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'My Pipeline',
+            '--on' => 'SCHEDULED',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('YAML', $tester->getDisplay());
+    }
+
+    public function testPipelinesCreateFromFlagsRejectsUnknownTrigger(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('createPipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:create'));
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            '--name' => 'My Pipeline',
+            '--on' => 'SOMETIMES',
+        ]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('MANUAL, ON_EVERY_PUSH', $tester->getDisplay());
+    }
+
     public function testPipelinesCreateFromFlagsJsonOutput(): void
     {
-        $pipeline = ['id' => 77, 'name' => 'CI Pipeline', 'trigger_mode' => 'ON_EVERY_PUSH'];
+        $pipeline = ['id' => 77, 'name' => 'CI Pipeline', 'events' => [['type' => 'PUSH', 'refs' => ['refs/heads/main']]]];
         $this->mockBuddyService->method('createPipeline')
             ->willReturn($pipeline);
 
@@ -1180,6 +1228,7 @@ YAML;
             '--project' => 'proj',
             '--name' => 'CI Pipeline',
             '--on' => 'ON_EVERY_PUSH',
+            '--refs' => 'refs/heads/main',
             '--json' => true,
         ]);
 
@@ -1189,7 +1238,7 @@ YAML;
         $data = json_decode($output, true);
         $this->assertSame(77, $data['id']);
         $this->assertSame('CI Pipeline', $data['name']);
-        $this->assertSame('ON_EVERY_PUSH', $data['trigger_mode']);
+        $this->assertSame('PUSH', $data['events'][0]['type']);
     }
 
     public function testPipelinesCreateFromFlagsHandlesApiError(): void

@@ -60,11 +60,11 @@ buddy pipelines:create pipeline.yaml
 
 # Via flags (quick creation):
 buddy pipelines:create --name="My Pipeline" --on=MANUAL --refs=refs/heads/main
-buddy pipelines:create --name="My Pipeline" --on=ON_EVERY_PUSH --json
+buddy pipelines:create --name="My Pipeline" --on=ON_EVERY_PUSH --refs=refs/heads/main --json
 ```
 
-`--on` accepts `MANUAL`, `ON_EVERY_PUSH`, or `SCHEDULED` (case-insensitive).
-`--refs` sets the branch/tag pattern (e.g. `refs/heads/main`, `refs/tags/v*`).
+`--on` accepts `MANUAL` (default) or `ON_EVERY_PUSH` (case-insensitive). `ON_EVERY_PUSH` requires `--refs`. `SCHEDULED` needs a cron expression, so create it from a YAML file.
+`--refs` sets the branch/tag pattern (e.g. `refs/heads/main`, `refs/tags/v*`): the branch a manual run uses, or the branch whose pushes trigger the pipeline.
 Both modes support `--json` to return the full pipeline object.
 
 ### pipelines:update
