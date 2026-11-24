@@ -22,6 +22,7 @@ use BuddyCli\Commands\Executions\ListCommand as ExecutionsListCommand;
 use BuddyCli\Commands\Executions\ShowCommand as ExecutionsShowCommand;
 use BuddyCli\Commands\Pipelines\CancelCommand;
 use BuddyCli\Commands\Pipelines\CreateCommand;
+use BuddyCli\Commands\Pipelines\DeleteCommand as PipelinesDeleteCommand;
 use BuddyCli\Commands\Pipelines\GetCommand;
 use BuddyCli\Commands\Pipelines\ListCommand as PipelinesListCommand;
 use BuddyCli\Commands\Pipelines\RetryCommand;
@@ -107,6 +108,7 @@ class Application extends ConsoleApplication
         $this->addCommand(new GetCommand($this));
         $this->addCommand(new CreateCommand($this));
         $this->addCommand(new UpdateCommand($this));
+        $this->addCommand(new PipelinesDeleteCommand($this));
 
         // Execution commands
         $this->addCommand(new ExecutionsListCommand($this));

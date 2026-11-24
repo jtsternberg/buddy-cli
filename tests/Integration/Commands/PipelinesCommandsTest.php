@@ -1412,4 +1412,171 @@ YAML;
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('Updated pipeline settings', $tester->getDisplay());
     }
+
+    // pipelines:delete tests
+
+    private function stubPipelineForDelete(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->with('ws', 'proj', 42)
+            ->willReturn(['id' => 42, 'name' => 'Throwaway']);
+    }
+
+    public function testPipelinesDeleteConfirmedDeletes(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->expects($this->once())
+            ->method('deletePipeline')
+            ->with('ws', 'proj', 42);
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->setInputs(['yes']);
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString("Delete pipeline 'Throwaway' (ID: 42)?", $tester->getDisplay());
+        $this->assertStringContainsString('Deleted pipeline: Throwaway (ID: 42)', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteDeclinedDoesNotDelete(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->expects($this->never())->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->setInputs(['n']);
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Cancelled.', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteOnlyAcceptsYes(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->expects($this->never())->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->setInputs(['yeah']);
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42']);
+
+        $this->assertStringContainsString('Cancelled.', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteNonInteractiveWithoutForceRefuses(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->expects($this->never())->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->execute(
+            ['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42'],
+            ['interactive' => false]
+        );
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('--force', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteForceSkipsPrompt(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->expects($this->once())
+            ->method('deletePipeline')
+            ->with('ws', 'proj', 42);
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->execute(
+            ['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42', '--force' => true],
+            ['interactive' => false]
+        );
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringNotContainsString('Delete pipeline', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteJsonOutput(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->execute([
+            '--workspace' => 'ws',
+            '--project' => 'proj',
+            'pipeline-id' => '42',
+            '--force' => true,
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertSame(
+            ['deleted' => true, 'id' => 42, 'name' => 'Throwaway'],
+            json_decode($tester->getDisplay(), true)
+        );
+    }
+
+    public function testPipelinesDeleteJsonPromptStaysOffStdout(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->setInputs(['yes']);
+        $tester->execute(
+            ['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42', '--json' => true],
+            ['capture_stderr_separately' => true]
+        );
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertSame(
+            ['deleted' => true, 'id' => 42, 'name' => 'Throwaway'],
+            json_decode($tester->getDisplay(), true)
+        );
+        $this->assertStringContainsString('Delete pipeline', $tester->getErrorOutput());
+    }
+
+    public function testPipelinesDeleteRejectsNonNumericId(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('getPipeline');
+        $this->mockBuddyService->expects($this->never())->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->execute(
+            ['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => 'deploy', '--force' => true]
+        );
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('numeric', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteNotFoundFails(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willThrowException(new BuddyResponseException(404, [], '{"errors":[{"message":"Pipeline not found"}]}'));
+        $this->mockBuddyService->expects($this->never())->method('deletePipeline');
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->execute(
+            ['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42', '--force' => true]
+        );
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Pipeline not found', $tester->getDisplay());
+    }
+
+    public function testPipelinesDeleteApiErrorFails(): void
+    {
+        $this->stubPipelineForDelete();
+        $this->mockBuddyService->method('deletePipeline')
+            ->willThrowException(new BuddyResponseException(403, [], '{"errors":[{"message":"Forbidden"}]}'));
+
+        $tester = new CommandTester($this->app->find('pipelines:delete'));
+        $tester->execute(
+            ['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '42', '--force' => true]
+        );
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('Delete failed', $tester->getDisplay());
+    }
 }

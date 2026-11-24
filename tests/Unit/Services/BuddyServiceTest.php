@@ -186,6 +186,20 @@ class BuddyServiceTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
+    public function testDeletePipelineCallsSdk(): void
+    {
+        $pipelinesApi = $this->createMock(Pipelines::class);
+        $pipelinesApi->expects($this->once())
+            ->method('deletePipeline')
+            ->with('my-ws', 'project1', 7)
+            ->willReturn(new BuddyResponse(204, [], ''));
+
+        $this->mockBuddy->method('getApiPipelines')
+            ->willReturn($pipelinesApi);
+
+        $this->service->deletePipeline('my-ws', 'project1', 7);
+    }
+
     public function testGetPipelineYamlDecodes(): void
     {
         $yaml = "pipeline: Deploy\n";

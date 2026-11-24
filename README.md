@@ -172,6 +172,8 @@ buddy pipelines:get <id>                  # Get pipeline config as native YAML f
 buddy pipelines:create <file>             # Create new pipeline from native YAML file
 buddy pipelines:create --name="My Pipeline" --on=MANUAL --refs=refs/heads/main  # Create via flags
 buddy pipelines:update <id> <file>        # Update pipeline from native YAML
+buddy pipelines:delete <id>               # Delete pipeline (with confirmation)
+buddy pipelines:delete <id> --force       # Delete without confirmation
 buddy pipelines:settings <id>             # Show pipeline settings (metadata + variables)
 buddy pipelines:settings <id> --update <file>  # Update pipeline settings from YAML
 ```

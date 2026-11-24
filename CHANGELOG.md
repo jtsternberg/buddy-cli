@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `pipelines:delete <id>` deletes a pipeline. It prompts with the pipeline's name and ID and deletes only on `y`/`yes`; `--force` skips the prompt, and with `--no-interaction` it refuses unless `--force` is given. `--json` returns `{"deleted": true, "id": ..., "name": ...}`.
 - `vars:set` takes `--file-place` (`CONTAINER` or `NONE`), `--file-path` and `--file-chmod` for file-backed variables. `--type=SSH_KEY` and `--type=SSH_PUBLIC_KEY` now require `--file-place`; the API refused them with "File place cannot be empty".
 - `vars:show` displays the file placement, `public_value` (the SSH key's public half) and `key_fingerprint` when the API returns them.
 

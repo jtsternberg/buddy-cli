@@ -73,6 +73,14 @@ Update pipeline from YAML file.
 buddy pipelines:update <pipeline-id> pipeline.yaml
 ```
 
+### pipelines:delete
+Delete a pipeline, with its actions and execution history. Prompts with the pipeline's name and ID and deletes only on `y`/`yes`; with `--no-interaction` it refuses unless `--force` is given. Takes a numeric pipeline ID only.
+```bash
+buddy pipelines:delete <pipeline-id>
+buddy pipelines:delete <pipeline-id> --force
+buddy pipelines:delete <pipeline-id> --force --json   # {"deleted":true,"id":...,"name":"..."}
+```
+
 ## Execution Commands
 
 ### executions:list

@@ -85,6 +85,13 @@ class BuddyService
         );
     }
 
+    public function deletePipeline(string $workspace, string $projectName, int $pipelineId): void
+    {
+        $this->withAutoRefresh(
+            fn () => $this->buddy->getApiPipelines()->deletePipeline($workspace, $projectName, $pipelineId)->getBody()
+        );
+    }
+
     public function getPipelineActions(string $workspace, string $projectName, int $pipelineId): array
     {
         return $this->withAutoRefresh(
