@@ -166,8 +166,9 @@ buddy pipelines:show <id> --yaml          # Output native Buddy YAML configurati
 buddy pipelines:run <id>                  # Run a pipeline
 buddy pipelines:run <id> --branch=main    # Run with specific branch
 buddy pipelines:run <id> --wait           # Run and wait for completion
-buddy pipelines:retry <id>                # Retry last failed execution
-buddy pipelines:cancel <id>               # Cancel running execution
+buddy pipelines:retry <id>                # Retry last failed/terminated execution
+buddy pipelines:cancel <id>               # Cancel the running execution (not queued ones)
+buddy pipelines:cancel <id> --execution=<exec-id>  # Cancel a specific run, running or queued
 buddy pipelines:get <id>                  # Get pipeline config as native YAML file
 buddy pipelines:create <file>             # Create new pipeline from native YAML file
 buddy pipelines:create --name="My Pipeline" --on=MANUAL --refs=refs/heads/main  # Create via flags

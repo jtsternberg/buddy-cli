@@ -35,15 +35,16 @@ buddy pipelines:run <pipeline-id> --var KEY=VALUE  # Pass variables
 ```
 
 ### pipelines:retry
-Retry the last failed execution.
+Retry the newest FAILED or TERMINATED execution (skips newer queued, running or successful runs).
 ```bash
 buddy pipelines:retry <pipeline-id>
 ```
 
 ### pipelines:cancel
-Cancel a running execution.
+Cancel the running (INPROGRESS) execution. Queued runs are left alone; with several running it refuses and lists them. Use `--execution` to cancel a specific run, running or queued.
 ```bash
 buddy pipelines:cancel <pipeline-id>
+buddy pipelines:cancel <pipeline-id> --execution=<execution-id>
 ```
 
 ### pipelines:get

@@ -17,7 +17,7 @@ class ListCommand extends BaseCommand
         $this
             ->setName('executions:list')
             ->setDescription('List recent executions')
-            ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Filter by status (SUCCESSFUL, FAILED, INPROGRESS)')
+            ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Filter by status (SUCCESSFUL, FAILED, INPROGRESS, ...) among the last 100 runs')
             ->addOption('limit', 'l', InputOption::VALUE_REQUIRED, 'Number of executions to show', '10')
             ->setHelp(<<<'HELP'
 Lists recent pipeline executions.
@@ -52,16 +52,22 @@ HELP);
         $project = $this->requireProject($input);
         $pipelineId = $this->requirePipeline($input);
 
-        $filters = [
-            'per_page' => (int) $input->getOption('limit'),
-        ];
+        $limit = (int) $input->getOption('limit');
+        $status = $input->getOption('status') ? strtoupper($input->getOption('status')) : null;
 
-        if ($status = $input->getOption('status')) {
-            $filters['status'] = strtoupper($status);
-        }
-
-        $response = $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, $filters);
+        // Buddy ignores a status query param, so filter here over a wider window.
+        $response = $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, [
+            'per_page' => $status === null ? $limit : max($limit, 100),
+        ]);
         $executions = $response['executions'] ?? [];
+
+        if ($status !== null) {
+            $executions = array_slice(
+                array_values(array_filter($executions, fn ($e) => ($e['status'] ?? '') === $status)),
+                0,
+                $limit
+            );
+        }
 
         if ($this->isJsonOutput($input)) {
             $this->outputJson($output, $executions);

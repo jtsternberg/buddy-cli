@@ -19,7 +19,8 @@ class RetryCommand extends BaseCommand
             ->setDescription('Retry the last failed execution')
             ->addArgument('pipeline-id', InputArgument::REQUIRED, 'Pipeline ID')
             ->setHelp(<<<'HELP'
-Retries the most recent execution of the specified pipeline.
+Retries the most recent FAILED or TERMINATED execution of the specified pipeline,
+skipping newer runs that are queued, running or successful.
 
 Useful for re-running failed builds without manually triggering a new execution.
 The retry uses the same commit and configuration as the original execution.
@@ -39,12 +40,18 @@ HELP);
         $project = $this->requireProject($input);
         $pipelineId = (int) $input->getArgument('pipeline-id');
 
-        // Get last execution
-        $executions = $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, ['per_page' => 1]);
-        $lastExecution = $executions['executions'][0] ?? null;
+        // Newest first; the newest run is often queued or still running, which retry can't act on.
+        $recent = $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, ['per_page' => 20])['executions'] ?? [];
+        $lastExecution = null;
+        foreach ($recent as $candidate) {
+            if (in_array($candidate['status'] ?? '', ['FAILED', 'TERMINATED'], true)) {
+                $lastExecution = $candidate;
+                break;
+            }
+        }
 
         if ($lastExecution === null) {
-            $output->writeln('<error>No executions found for this pipeline.</error>');
+            $output->writeln('<error>No failed or terminated execution among the last 20 runs of this pipeline.</error>');
             return self::FAILURE;
         }
 

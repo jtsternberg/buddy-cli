@@ -424,7 +424,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRetryNoExecutions(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->with('ws', 'proj', 1, ['per_page' => 20])
             ->willReturn(['executions' => []]);
 
         $command = $this->app->find('pipelines:retry');
@@ -436,14 +436,46 @@ class PipelinesCommandsTest extends TestCase
         ]);
 
         $this->assertSame(1, $tester->getStatusCode());
-        $this->assertStringContainsString('No executions found for this pipeline', $tester->getDisplay());
+        $this->assertStringContainsString('No failed or terminated execution', $tester->getDisplay());
+    }
+
+    public function testPipelinesRetrySkipsNewerQueuedAndRunningRuns(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn(['executions' => [
+                ['id' => 18, 'status' => 'ENQUEUED'],
+                ['id' => 17, 'status' => 'TERMINATED'],
+                ['id' => 16, 'status' => 'INPROGRESS'],
+            ]]);
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('retryExecution')
+            ->with('ws', 'proj', 1, 17)
+            ->willReturn(['id' => 19, 'status' => 'INPROGRESS']);
+
+        $tester = new CommandTester($this->app->find('pipelines:retry'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function testPipelinesRetryIgnoresSuccessfulRuns(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn(['executions' => [['id' => 14, 'status' => 'SUCCESSFUL']]]);
+        $this->mockBuddyService->expects($this->never())->method('retryExecution');
+
+        $tester = new CommandTester($this->app->find('pipelines:retry'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1']);
+
+        $this->assertSame(1, $tester->getStatusCode());
     }
 
     public function testPipelinesRetrySuccess(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['per_page' => 1])
-            ->willReturn(['executions' => [['id' => 50]]]);
+            ->with('ws', 'proj', 1, ['per_page' => 20])
+            ->willReturn(['executions' => [['id' => 50, 'status' => 'FAILED']]]);
 
         $this->mockBuddyService->method('retryExecution')
             ->with('ws', 'proj', 1, 50)
@@ -469,8 +501,8 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRetryJsonOutput(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['per_page' => 1])
-            ->willReturn(['executions' => [['id' => 50]]]);
+            ->with('ws', 'proj', 1, ['per_page' => 20])
+            ->willReturn(['executions' => [['id' => 50, 'status' => 'FAILED']]]);
 
         $execution = ['id' => 51, 'status' => 'INPROGRESS'];
         $this->mockBuddyService->method('retryExecution')
@@ -496,7 +528,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRetryResourceNotFoundSuggestsBranchRun(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->with('ws', 'proj', 1, ['per_page' => 20])
             ->willReturn(['executions' => [
                 [
                     'id' => 50,
@@ -528,7 +560,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRetryGenericErrorDoesNotSuggestBranch(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->with('ws', 'proj', 1, ['per_page' => 20])
             ->willReturn(['executions' => [
                 [
                     'id' => 50,
@@ -580,7 +612,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesCancelNoRunningExecution(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['status' => 'INPROGRESS', 'per_page' => 1])
+            ->with('ws', 'proj', 1, ['per_page' => 20])
             ->willReturn(['executions' => []]);
 
         $command = $this->app->find('pipelines:cancel');
@@ -595,10 +627,88 @@ class PipelinesCommandsTest extends TestCase
         $this->assertStringContainsString('No running execution found', $tester->getDisplay());
     }
 
+    public function testPipelinesCancelSkipsNewerQueuedRun(): void
+    {
+        // Buddy ignores a status filter on this endpoint and lists newest first.
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn(['executions' => [
+                ['id' => 18, 'status' => 'ENQUEUED'],
+                ['id' => 17, 'status' => 'TERMINATED'],
+                ['id' => 16, 'status' => 'INPROGRESS'],
+            ]]);
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('cancelExecution')
+            ->with('ws', 'proj', 1, 16)
+            ->willReturn(['id' => 16, 'status' => 'TERMINATING']);
+
+        $tester = new CommandTester($this->app->find('pipelines:cancel'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function testPipelinesCancelExecutionOptionTargetsThatRun(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('getExecutions');
+        $this->mockBuddyService->expects($this->once())
+            ->method('cancelExecution')
+            ->with('ws', 'proj', 1, 18)
+            ->willReturn(['id' => 18, 'status' => 'TERMINATED']);
+
+        $tester = new CommandTester($this->app->find('pipelines:cancel'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1', '--execution' => '18']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function testPipelinesCancelRejectsNonNumericExecution(): void
+    {
+        $this->mockBuddyService->expects($this->never())->method('cancelExecution');
+
+        $tester = new CommandTester($this->app->find('pipelines:cancel'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1', '--execution' => 'latest']);
+
+        $this->assertSame(1, $tester->getStatusCode());
+    }
+
+    public function testPipelinesCancelRefusesWhenSeveralRunsAreRunning(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn(['executions' => [
+                ['id' => 21, 'status' => 'INPROGRESS'],
+                ['id' => 20, 'status' => 'INPROGRESS'],
+            ]]);
+        $this->mockBuddyService->expects($this->never())->method('cancelExecution');
+
+        $tester = new CommandTester($this->app->find('pipelines:cancel'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1']);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('#21', $tester->getDisplay());
+        $this->assertStringContainsString('#20', $tester->getDisplay());
+        $this->assertStringContainsString('--execution', $tester->getDisplay());
+    }
+
+    public function testPipelinesCancelNamesQueuedRunsWhenNoneRunning(): void
+    {
+        $this->mockBuddyService->method('getExecutions')
+            ->willReturn(['executions' => [['id' => 18, 'status' => 'ENQUEUED']]]);
+        $this->mockBuddyService->expects($this->never())->method('cancelExecution');
+
+        $tester = new CommandTester($this->app->find('pipelines:cancel'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('No running execution', $tester->getDisplay());
+        $this->assertStringContainsString('#18', $tester->getDisplay());
+        $this->assertStringContainsString('--execution=18', $tester->getDisplay());
+    }
+
     public function testPipelinesCancelSuccess(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['status' => 'INPROGRESS', 'per_page' => 1])
+            ->with('ws', 'proj', 1, ['per_page' => 20])
             ->willReturn([
                 'executions' => [
                     ['id' => 100, 'status' => 'INPROGRESS'],
@@ -629,7 +739,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesCancelJsonOutput(): void
     {
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, ['status' => 'INPROGRESS', 'per_page' => 1])
+            ->with('ws', 'proj', 1, ['per_page' => 20])
             ->willReturn([
                 'executions' => [
                     ['id' => 100, 'status' => 'INPROGRESS'],

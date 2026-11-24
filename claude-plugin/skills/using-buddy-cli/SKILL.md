@@ -47,7 +47,7 @@ buddy pipelines:run <id>                # Run a pipeline
 buddy pipelines:run <id> --wait         # Run and wait for completion
 buddy pipelines:run <id> --branch=<b>   # Run wildcard pipeline on branch
 buddy pipelines:retry <id>              # Retry last failed execution
-buddy pipelines:cancel <id>             # Cancel running execution
+buddy pipelines:cancel <id>             # Cancel running execution (--execution=<id> for a specific run)
 buddy pipelines:create pipeline.yaml    # Create from YAML file
 buddy pipelines:create --name="X" --on=MANUAL --refs=refs/heads/main  # Create via flags
 buddy pipelines:get <id>                # Export pipeline config as YAML

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `pipelines:cancel --execution=<id>` cancels a specific run, running or queued.
+
+### Fixed
+
+- `pipelines:cancel <id>` could cancel the wrong run. It asked Buddy for `status=INPROGRESS`, which the API ignores, and cancelled the newest execution, often a queued one. It now picks the INPROGRESS run itself, leaves queued runs alone (naming them), and refuses if several are running.
+- `pipelines:retry` retried the newest execution whatever its state. It now retries the newest FAILED or TERMINATED run, as its description always said.
+- `executions:list --status` sent the same ignored filter and listed every status. It now filters on the CLI side, over the last 100 runs.
+
 ## [1.10.0] - 2026-11-24
 
 ### Added

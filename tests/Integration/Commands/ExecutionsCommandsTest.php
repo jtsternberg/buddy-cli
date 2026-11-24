@@ -125,9 +125,14 @@ class ExecutionsCommandsTest extends TestCase
 
     public function testExecutionsListWithStatusFilter(): void
     {
+        // Buddy ignores a status query param, so the filter has to run on our side.
         $this->mockBuddyService->method('getExecutions')
-            ->with('ws', 'proj', 1, $this->callback(fn ($f) => $f['status'] === 'FAILED'))
-            ->willReturn(['executions' => []]);
+            ->with('ws', 'proj', 1, $this->callback(fn ($f) => !isset($f['status'])))
+            ->willReturn(['executions' => [
+                ['id' => 3, 'status' => 'SUCCESSFUL'],
+                ['id' => 2, 'status' => 'FAILED'],
+                ['id' => 1, 'status' => 'FAILED'],
+            ]]);
 
         $command = $this->app->find('executions:list');
         $tester = new CommandTester($command);
@@ -136,9 +141,14 @@ class ExecutionsCommandsTest extends TestCase
             '--project' => 'proj',
             '--pipeline' => '1',
             '--status' => 'failed',
+            '--limit' => '1',
+            '--json' => true,
         ]);
 
         $this->assertSame(0, $tester->getStatusCode());
+        $data = json_decode($tester->getDisplay(), true);
+        $ids = array_column($data['executions'] ?? $data, 'id');
+        $this->assertSame([2], $ids);
     }
 
     public function testExecutionsListJsonOutput(): void
