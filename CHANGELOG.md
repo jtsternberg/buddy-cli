@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-24
+
 ### Added
 
 - `pipelines:delete <id>` deletes a pipeline. It prompts with the pipeline's name and ID and deletes only on `y`/`yes`; `--force` skips the prompt, and with `--no-interaction` it refuses unless `--force` is given. `--json` returns `{"deleted": true, "id": ..., "name": ...}`.
