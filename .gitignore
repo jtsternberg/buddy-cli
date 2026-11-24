@@ -15,3 +15,7 @@
 .dolt/
 *.db
 .beads-credential-key
+
+# Beads machine-local runtime (per-machine port/path, lock)
+.beads.gate.lock
+.beads/dolt-server-config.yaml
