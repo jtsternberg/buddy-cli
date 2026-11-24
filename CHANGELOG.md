@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `pipelines:create --on/--refs` sent `trigger_mode` and `ref_name`, which Buddy's API no longer reads, so every flag-created pipeline came out manual with no branch. `--refs` now sets the pipeline's `refs`, and `--on=ON_EVERY_PUSH` adds a `PUSH` event for that ref (it now requires `--refs`). `--on=SCHEDULED` errors and points to the YAML file mode, since there is no cron flag.
+- `pipelines:run <id>` with no `--branch` refused every pipeline as "uses wildcards", because it checked `ref_name`, which the API no longer returns. It now refuses only when the pipeline's `refs` hold a wildcard pattern (`refs/heads/*`).
+- `pipelines:run` with no options sent an empty JSON array as the body, which Buddy rejects ("Invalid JSON value of ''"). Empty bodies now go out as `{}`.
+- `pipelines:list`, `show` and `settings` showed `-` for Trigger and Branch/Ref. They now read the API's `events` (no events means `MANUAL`) and `refs`. `pipelines:show` takes Last Run from the newest execution.
+- `pipelines:settings --yaml` exported `trigger_mode`/`ref_name`, so a `--update` round trip dropped the branch. It now exports `refs`, `--update` sends `refs` (an old file's `ref_name` is mapped onto it) and warns that `trigger_mode` is ignored.
+
+### Changed
+
+- `pipelines:list` no longer has a Last Run column: the API returns no last-run date on pipelines, so it was always `-`. `pipelines:show` still has it.
 
 ## [1.9.0] - 2026-10-26
 

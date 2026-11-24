@@ -92,10 +92,12 @@ HELP);
             }
         }
 
-        // Check if pipeline uses wildcards and requires branch/tag/revision
+        // A wildcard ref (refs/heads/*) can't pick a branch on its own. Empty refs is a
+        // codeless pipeline, which runs without one; anything else the API judges.
         $pipeline = $this->getBuddyService()->getPipeline($workspace, $project, $pipelineId);
         $hasRef = !empty($data['branch']) || !empty($data['tag']) || !empty($data['to_revision']);
-        if (empty($pipeline['ref_name']) && !$hasRef) {
+        $isWildcard = (bool) array_filter((array) ($pipeline['refs'] ?? []), fn ($ref) => str_contains((string) $ref, '*'));
+        if ($isWildcard && !$hasRef) {
             $output->writeln('<error>This pipeline uses wildcards. Specify --branch, --tag, or --revision.</error>');
             return self::FAILURE;
         }

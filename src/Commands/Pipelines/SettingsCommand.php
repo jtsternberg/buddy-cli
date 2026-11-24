@@ -68,8 +68,8 @@ HELP);
         $data = [
             'ID' => $pipeline['id'] ?? '-',
             'Name' => $pipeline['name'] ?? '-',
-            'Trigger' => $pipeline['trigger_mode'] ?? '-',
-            'Branch/Ref' => $pipeline['ref_name'] ?? '-',
+            'Trigger' => $this->formatTrigger($pipeline),
+            'Branch/Ref' => $this->formatRefs($pipeline),
             'Priority' => $pipeline['priority'] ?? '-',
             'Fetch All Refs' => $this->formatBool($pipeline['fetch_all_refs'] ?? false),
             'Always From Scratch' => $this->formatBool($pipeline['always_from_scratch'] ?? false),
@@ -117,6 +117,10 @@ HELP);
 
         $pipelineData = $this->preparePipelineData($config);
 
+        if (isset($config['trigger_mode'])) {
+            $output->writeln('<comment>trigger_mode is ignored: the Buddy API no longer reads it. Set triggers with events (e.g. a PUSH event with refs).</comment>');
+        }
+
         try {
             $pipeline = $this->getBuddyService()->updatePipeline($workspace, $project, $pipelineId, $pipelineData);
             $output->writeln("<info>Updated pipeline settings: {$pipeline['name']} (ID: {$pipeline['id']})</info>");
@@ -132,8 +136,7 @@ HELP);
     {
         $config = [
             'name' => $pipeline['name'] ?? null,
-            'trigger_mode' => $pipeline['trigger_mode'] ?? null,
-            'ref_name' => $pipeline['ref_name'] ?? null,
+            'refs' => $pipeline['refs'] ?? [],
             'events' => $pipeline['events'] ?? [],
             'priority' => $pipeline['priority'] ?? null,
             'fetch_all_refs' => $pipeline['fetch_all_refs'] ?? false,

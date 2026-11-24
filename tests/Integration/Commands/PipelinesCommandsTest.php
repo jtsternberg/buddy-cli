@@ -69,14 +69,14 @@ class PipelinesCommandsTest extends TestCase
                         'id' => 1,
                         'name' => 'Deploy',
                         'last_execution_status' => 'SUCCESSFUL',
-                        'trigger_mode' => 'MANUAL',
-                        'last_execution_date' => '2024-01-15T10:00:00Z',
+                        'refs' => ['refs/heads/main'],
                     ],
                     [
                         'id' => 2,
                         'name' => 'Test',
                         'last_execution_status' => 'FAILED',
-                        'trigger_mode' => 'ON_EVERY_PUSH',
+                        'refs' => [],
+                        'events' => [['type' => 'PUSH', 'refs' => ['refs/heads/main']]],
                     ],
                 ],
             ]);
@@ -90,6 +90,10 @@ class PipelinesCommandsTest extends TestCase
         $this->assertStringContainsString('Deploy', $output);
         $this->assertStringContainsString('Test', $output);
         $this->assertStringContainsString('SUCCESSFUL', $output);
+        $this->assertStringContainsString('MANUAL', $output);
+        $this->assertStringContainsString('PUSH', $output);
+        // The API returns no last-run date on pipelines.
+        $this->assertStringNotContainsString('Last Run', $output);
     }
 
     public function testPipelinesListEmpty(): void
@@ -129,7 +133,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunSuccess(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'name' => 'Deploy', 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'name' => 'Deploy', 'refs' => ['refs/heads/main']]);
 
         $this->mockBuddyService->method('runExecution')
             ->with('ws', 'proj', 1, [])
@@ -156,7 +160,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunWildcardRequiresBranch(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'name' => 'Deploy', 'ref_name' => null]); // Wildcard pipeline
+            ->willReturn(['id' => 1, 'name' => 'Deploy', 'refs' => ['refs/heads/*']]); // Wildcard pipeline
 
         $command = $this->app->find('pipelines:run');
         $tester = new CommandTester($command);
@@ -170,10 +174,26 @@ class PipelinesCommandsTest extends TestCase
         $this->assertStringContainsString('wildcards', $tester->getDisplay());
     }
 
+    public function testPipelinesRunCodelessPipelineNeedsNoBranch(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn(['id' => 1, 'name' => 'Ops', 'refs' => []]);
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('runExecution')
+            ->with('ws', 'proj', 1, [])
+            ->willReturn(['id' => 102, 'status' => 'INPROGRESS']);
+
+        $tester = new CommandTester($this->app->find('pipelines:run'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1']);
+
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
     public function testPipelinesRunWithBranch(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => null]); // Wildcard
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/*']]); // Wildcard
 
         $this->mockBuddyService->method('runExecution')
             ->with('ws', 'proj', 1, ['branch' => ['name' => 'feature/test']])
@@ -199,7 +219,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunJsonOutput(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/main']]);
 
         $execution = ['id' => 100, 'status' => 'INPROGRESS'];
         $this->mockBuddyService->method('runExecution')
@@ -223,7 +243,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunFollowPrintsActionProgress(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/main']]);
 
         $this->mockBuddyService->method('runExecution')
             ->willReturn(['id' => 200, 'status' => 'INPROGRESS']);
@@ -266,7 +286,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunFollowPrintsFailedAndReturnsFailure(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/main']]);
 
         $this->mockBuddyService->method('runExecution')
             ->willReturn(['id' => 201, 'status' => 'INPROGRESS']);
@@ -298,7 +318,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunFollowRendersSkippedAction(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/main']]);
 
         $this->mockBuddyService->method('runExecution')
             ->willReturn(['id' => 202, 'status' => 'INPROGRESS']);
@@ -330,7 +350,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunFollowTracksDuplicateActionNamesIndependently(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/main']]);
 
         $this->mockBuddyService->method('runExecution')
             ->willReturn(['id' => 203, 'status' => 'INPROGRESS']);
@@ -362,7 +382,7 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesRunHandlesApiError(): void
     {
         $this->mockBuddyService->method('getPipeline')
-            ->willReturn(['id' => 1, 'ref_name' => 'refs/heads/main']);
+            ->willReturn(['id' => 1, 'refs' => ['refs/heads/main']]);
 
         $this->mockBuddyService->method('runExecution')
             ->willThrowException(new BuddyResponseException(400, [], '{"error":"Pipeline is disabled"}'));
@@ -761,11 +781,13 @@ class PipelinesCommandsTest extends TestCase
                 'id' => 1,
                 'name' => 'Deploy Production',
                 'last_execution_status' => 'SUCCESSFUL',
-                'trigger_mode' => 'MANUAL',
-                'ref_name' => 'refs/heads/main',
-                'last_execution_date' => '2024-01-15T10:00:00Z',
+                'refs' => ['refs/heads/main'],
                 'create_date' => '2023-06-01T09:00:00Z',
             ]);
+
+        $this->mockBuddyService->method('getExecutions')
+            ->with('ws', 'proj', 1, ['per_page' => 1])
+            ->willReturn(['executions' => [['id' => 5, 'start_date' => '2024-01-15T10:00:00Z']]]);
 
         $this->mockBuddyService->method('getPipelineActions')
             ->with('ws', 'proj', 1)
@@ -785,6 +807,25 @@ class PipelinesCommandsTest extends TestCase
         $this->assertStringContainsString('SUCCESSFUL', $output);
         $this->assertStringContainsString('MANUAL', $output);
         $this->assertStringContainsString('refs/heads/main', $output);
+        $this->assertDoesNotMatchRegularExpression('/Last Run\s+-/', $output);
+    }
+
+    public function testPipelinesShowDisplaysPushTriggerAndItsRefs(): void
+    {
+        $this->mockBuddyService->method('getPipeline')
+            ->willReturn([
+                'id' => 2,
+                'name' => 'Staging',
+                'refs' => [],
+                'events' => [['type' => 'PUSH', 'refs' => ['refs/heads/main']]],
+            ]);
+        $this->mockBuddyService->method('getPipelineActions')->willReturn(['actions' => []]);
+
+        $tester = new CommandTester($this->app->find('pipelines:show'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '2']);
+
+        $this->assertMatchesRegularExpression('/Trigger\s+PUSH/', $tester->getDisplay());
+        $this->assertMatchesRegularExpression('#Branch/Ref\s+refs/heads/main#', $tester->getDisplay());
     }
 
     public function testPipelinesShowDisplaysActions(): void
@@ -835,8 +876,7 @@ class PipelinesCommandsTest extends TestCase
         $pipeline = [
             'id' => 1,
             'name' => 'Deploy',
-            'trigger_mode' => 'MANUAL',
-            'ref_name' => 'refs/heads/main',
+            'refs' => ['refs/heads/main'],
         ];
         $this->mockBuddyService->method('getPipeline')
             ->willReturn($pipeline);
@@ -859,7 +899,7 @@ class PipelinesCommandsTest extends TestCase
         $data = json_decode($output, true);
         $this->assertSame(1, $data['id']);
         $this->assertSame('Deploy', $data['name']);
-        $this->assertSame('MANUAL', $data['trigger_mode']);
+        $this->assertSame(['refs/heads/main'], $data['refs']);
     }
 
     public function testPipelinesShowYamlOutput(): void
@@ -961,9 +1001,9 @@ class PipelinesCommandsTest extends TestCase
     public function testPipelinesCreateSuccess(): void
     {
         $yaml = <<<'YAML'
-name: "Test Pipeline"
-trigger_mode: MANUAL
-ref_name: refs/heads/main
+- pipeline: "Test Pipeline"
+  refs:
+    - refs/heads/main
 YAML;
         $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
 
@@ -971,8 +1011,7 @@ YAML;
             ->method('createPipeline')
             ->with('ws', 'proj', [
                 'name' => 'Test Pipeline',
-                'trigger_mode' => 'MANUAL',
-                'ref_name' => 'refs/heads/main',
+                'refs' => ['refs/heads/main'],
             ])
             ->willReturn(['id' => 99, 'name' => 'Test Pipeline']);
 
@@ -992,6 +1031,23 @@ YAML;
         $output = $tester->getDisplay();
         $this->assertStringContainsString('Created pipeline: Test Pipeline', $output);
         $this->assertStringContainsString('ID: 99', $output);
+    }
+
+    public function testPipelinesCreateMapsLegacyRefNameToRefs(): void
+    {
+        $yaml = "name: Legacy\ntrigger_mode: MANUAL\nref_name: refs/heads/main\n";
+        $yamlFile = $this->writeTempFile('pipeline.yaml', $yaml);
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('createPipeline')
+            ->with('ws', 'proj', ['name' => 'Legacy', 'refs' => ['refs/heads/main']])
+            ->willReturn(['id' => 98, 'name' => 'Legacy']);
+        $this->mockBuddyService->method('updatePipelineYaml');
+
+        $tester = new CommandTester($this->app->find('pipelines:create'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'file' => $yamlFile]);
+
+        $this->assertSame(0, $tester->getStatusCode());
     }
 
     public function testPipelinesCreateWithActions(): void
@@ -1378,8 +1434,7 @@ YAML;
             ->willReturn([
                 'id' => 1,
                 'name' => 'Deploy',
-                'trigger_mode' => 'MANUAL',
-                'ref_name' => 'refs/heads/main',
+                'refs' => ['refs/heads/main'],
                 'priority' => 'HIGH',
                 'variables' => [
                     ['key' => 'ENV', 'type' => 'VAR', 'settable' => true, 'description' => 'Environment'],
@@ -1409,8 +1464,7 @@ YAML;
             ->willReturn([
                 'id' => 1,
                 'name' => 'Deploy',
-                'trigger_mode' => 'MANUAL',
-                'ref_name' => 'refs/heads/main',
+                'refs' => ['refs/heads/main'],
                 'variables' => [
                     ['key' => 'ENV', 'value' => 'prod', 'type' => 'VAR', 'settable' => true],
                 ],
@@ -1428,7 +1482,9 @@ YAML;
         $this->assertSame(0, $tester->getStatusCode());
         $output = $tester->getDisplay();
         $this->assertStringContainsString('name: Deploy', $output);
-        $this->assertStringContainsString('trigger_mode: MANUAL', $output);
+        $this->assertStringContainsString('- refs/heads/main', $output);
+        $this->assertStringNotContainsString('trigger_mode', $output);
+        $this->assertStringNotContainsString('ref_name', $output);
         $this->assertStringContainsString('variables:', $output);
         $this->assertStringContainsString('key: ENV', $output);
     }
@@ -1437,7 +1493,8 @@ YAML;
     {
         $yaml = <<<'YAML'
 name: "Updated"
-trigger_mode: MANUAL
+refs:
+  - refs/heads/main
 YAML;
         $yamlFile = $this->writeTempFile('settings.yaml', $yaml);
 
@@ -1445,7 +1502,7 @@ YAML;
             ->method('updatePipeline')
             ->with('ws', 'proj', 1, [
                 'name' => 'Updated',
-                'trigger_mode' => 'MANUAL',
+                'refs' => ['refs/heads/main'],
             ])
             ->willReturn(['id' => 1, 'name' => 'Updated']);
 
@@ -1627,5 +1684,21 @@ YAML;
 
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('Delete failed', $tester->getDisplay());
+    }
+
+    public function testPipelinesSettingsUpdateWarnsThatTriggerModeIsIgnored(): void
+    {
+        $yamlFile = $this->writeTempFile('settings.yaml', "name: Updated\ntrigger_mode: ON_EVERY_PUSH\n");
+
+        $this->mockBuddyService->expects($this->once())
+            ->method('updatePipeline')
+            ->with('ws', 'proj', 1, ['name' => 'Updated'])
+            ->willReturn(['id' => 1, 'name' => 'Updated']);
+
+        $tester = new CommandTester($this->app->find('pipelines:settings'));
+        $tester->execute(['--workspace' => 'ws', '--project' => 'proj', 'pipeline-id' => '1', '--update' => $yamlFile]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('trigger_mode is ignored', $tester->getDisplay());
     }
 }

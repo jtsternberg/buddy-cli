@@ -46,12 +46,11 @@ class ListCommand extends BaseCommand
                 $pipeline['id'] ?? '-',
                 $pipeline['name'] ?? '-',
                 $this->formatStatus($pipeline['last_execution_status'] ?? 'UNKNOWN'),
-                $pipeline['trigger_mode'] ?? '-',
-                $this->formatTime($pipeline['last_execution_date'] ?? null),
+                $this->formatTrigger($pipeline),
             ];
         }
 
-        TableFormatter::render($output, ['ID', 'Name', 'Status', 'Trigger', 'Last Run'], $rows);
+        TableFormatter::render($output, ['ID', 'Name', 'Status', 'Trigger'], $rows);
 
         return self::SUCCESS;
     }

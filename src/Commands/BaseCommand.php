@@ -151,7 +151,7 @@ abstract class BaseCommand extends Command
         $data = [];
 
         $allowedFields = [
-            'name', 'trigger_mode', 'ref_name', 'events', 'priority',
+            'name', 'refs', 'events', 'priority',
             'fetch_all_refs', 'always_from_scratch', 'auto_clear_cache',
             'no_skip_to_most_recent', 'terminate_stale_runs', 'concurrent_pipeline_runs',
             'fail_on_prepare_env_warning', 'variables',
@@ -163,7 +163,40 @@ abstract class BaseCommand extends Command
             }
         }
 
+        // Older settings/YAML files carry ref_name, which the API ignores; it maps
+        // cleanly onto refs. trigger_mode has no equivalent without a ref, so it's dropped.
+        if (!isset($data['refs']) && !empty($config['ref_name'])) {
+            $data['refs'] = [$config['ref_name']];
+        }
+
         return $data;
+    }
+
+    /**
+     * The API has no trigger_mode: a pipeline with no events runs manually.
+     */
+    protected function formatTrigger(array $pipeline): string
+    {
+        $types = array_unique(array_filter(array_map(
+            fn ($event) => $event['type'] ?? null,
+            (array) ($pipeline['events'] ?? [])
+        )));
+
+        return $types === [] ? 'MANUAL' : implode(', ', $types);
+    }
+
+    /**
+     * A manual pipeline's branch lives in refs; a push pipeline's lives on its events.
+     */
+    protected function formatRefs(array $pipeline): string
+    {
+        $refs = (array) ($pipeline['refs'] ?? []);
+        foreach ((array) ($pipeline['events'] ?? []) as $event) {
+            $refs = array_merge($refs, (array) ($event['refs'] ?? []));
+        }
+        $refs = array_values(array_unique(array_filter($refs)));
+
+        return $refs === [] ? '-' : implode(', ', $refs);
     }
 
     protected function formatStatus(string $status): string

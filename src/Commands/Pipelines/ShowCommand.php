@@ -69,9 +69,12 @@ HELP);
             'ID' => $pipeline['id'] ?? '-',
             'Name' => $pipeline['name'] ?? '-',
             'Status' => $this->formatStatus($pipeline['last_execution_status'] ?? 'UNKNOWN'),
-            'Trigger' => $pipeline['trigger_mode'] ?? '-',
-            'Branch/Ref' => $pipeline['ref_name'] ?? '-',
-            'Last Run' => $this->formatTime($pipeline['last_execution_date'] ?? null),
+            'Trigger' => $this->formatTrigger($pipeline),
+            'Branch/Ref' => $this->formatRefs($pipeline),
+            // Pipelines carry no last-run date, so read it off the newest execution.
+            'Last Run' => $this->formatTime(
+                $this->getBuddyService()->getExecutions($workspace, $project, $pipelineId, ['per_page' => 1])['executions'][0]['start_date'] ?? null
+            ),
             'Created' => $this->formatTime($pipeline['create_date'] ?? null),
         ];
 

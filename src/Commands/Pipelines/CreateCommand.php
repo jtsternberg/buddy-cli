@@ -36,18 +36,24 @@ Creates a new pipeline. Supports two modes:
 The YAML file is applied as the full pipeline configuration (lossless). This command
 creates a pipeline with minimal metadata first, then patches the native YAML.
 
-Example YAML:
-  name: "Deploy to Production"
-  trigger_mode: MANUAL
-  ref_name: refs/heads/main
-  actions:
-    - name: "Build"
-      type: BUILD
-      docker_image_name: node
-      docker_image_tag: "18"
-      execute_commands:
-        - npm install
-        - npm run build
+Example YAML (native Buddy format, as written by pipelines:get):
+  - pipeline: "Deploy to Production"
+    refs:
+      - refs/heads/main
+    actions:
+      - action: "Build"
+        type: BUILD
+        docker_image_name: node
+        docker_image_tag: "18"
+        execute_commands:
+          - npm install
+          - npm run build
+
+  For a push trigger, replace refs with:
+    events:
+      - type: PUSH
+        refs:
+          - refs/heads/main
 HELP);
 
         $this->addWorkspaceOption();
@@ -167,10 +173,6 @@ HELP);
 
         if (empty($data['name']) && isset($config['pipeline'])) {
             $data['name'] = $config['pipeline'];
-        }
-
-        if (empty($data['ref_name']) && isset($config['refs']) && is_array($config['refs']) && !empty($config['refs'][0])) {
-            $data['ref_name'] = $config['refs'][0];
         }
 
         return $data;
