@@ -38,7 +38,7 @@ buddy executions:action-logs <exec-id> <action-execution-id> --pipeline=<id>
 
 ### From a URL
 
-When the user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent to extract workspace, project, pipeline, and execution IDs.
+Run `buddy resolve <url> --json`: it returns `workspace`, `project`, `pipeline`, `execution` and `action_execution`, plus ready-made `flags`.
 
 > **Note**: URL execution IDs are hex hashes (e.g., `69c2d8c162305ac4bd6107fb`). The CLI resolves these to integer IDs automatically — you can pass either format.
 

@@ -94,6 +94,15 @@ buddy pipelines:delete <pipeline-id> --force
 buddy pipelines:delete <pipeline-id> --force --json   # {"deleted":true,"id":...,"name":"..."}
 ```
 
+### resolve
+Turn a Buddy.works URL, pipeline name or ID into flags. Name lookups need workspace/project context; an exact name wins, otherwise a single partial match, and several or no matches fail listing candidates.
+```bash
+buddy resolve https://app.buddy.works/<ws>/<project>/pipelines/pipeline/<id>/execution/<exec> --json
+# {"source":"url","workspace":"<ws>","project":"<project>","pipeline":<id>,"execution":"<exec>","flags":"-w <ws> -p <project> --pipeline=<id>"}
+buddy resolve "deploy production" --json
+buddy resolve 506857
+```
+
 ## Execution Commands
 
 ### executions:list

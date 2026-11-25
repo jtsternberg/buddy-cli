@@ -40,6 +40,16 @@ class ApplicationTest extends TestCase
         $this->assertSame($manifest['version'], Application::VERSION);
     }
 
+    public function testVersionMatchesCodexPluginManifest(): void
+    {
+        $manifest = json_decode(
+            (string) file_get_contents(__DIR__ . '/../../claude-plugin/.codex-plugin/plugin.json'),
+            true
+        );
+
+        $this->assertSame($manifest['version'], Application::VERSION);
+    }
+
     public function testApplicationRegistersCommands(): void
     {
         $app = new Application();

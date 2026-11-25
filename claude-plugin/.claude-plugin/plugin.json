@@ -9,6 +9,5 @@
   "repository": "https://github.com/jtsternberg/buddy-cli",
   "license": "MIT",
   "keywords": ["ci", "ci/cd", "buddy.works", "pipelines", "deployment"],
-  "skills": "./skills/",
-  "commands": "./commands/"
+  "skills": "./skills/"
 }

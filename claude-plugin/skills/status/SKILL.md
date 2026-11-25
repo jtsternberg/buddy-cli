@@ -1,16 +1,30 @@
-# /buddy-cli:status
+---
+name: status
+description: Show current and recent Buddy.works pipeline execution status by pipeline name, numeric ID, or app.buddy.works URL.
+argument-hint: "[pipeline-name-or-id-or-url]"
+disable-model-invocation: true
+---
+
+# Buddy Status
+
+Invoked with: $ARGUMENTS
+
+Codex: the arguments are the text after the skill name in the request.
 
 Show current and recent pipeline execution status.
 
 ## Usage
 
 ```
-/buddy-cli:status [pipeline-name-or-id-or-url]
+/buddy-cli:status [pipeline-name-or-id-or-url]     # Claude Code
+$buddy-cli:status [pipeline-name-or-id-or-url]     # Codex
 ```
+
+Examples below use the Claude Code form.
 
 ## Arguments
 
-- `pipeline-name-or-id-or-url` - Pipeline name, numeric ID, or Buddy.works URL (optional). If a URL is given, parse it per the `buddy-cli:url-parser` agent.
+- `pipeline-name-or-id-or-url` - Pipeline name, numeric ID, or Buddy.works URL (optional). Resolve it with `buddy resolve <input> --json`.
 
 ## Instructions
 
@@ -26,7 +40,7 @@ Show current and recent pipeline execution status.
 
 3. **Highlight important info**:
    - Currently running executions (show progress)
-   - Failed executions (suggest `/buddy-cli:logs` to investigate)
+   - Failed executions (suggest the logs skill to investigate)
    - Recent successful deployments
 
 ## Output Format
@@ -45,7 +59,7 @@ For running executions, show which action is currently executing.
 
 ## URL Support
 
-If a Buddy.works URL is provided, parse it per the `buddy-cli:url-parser` agent.
+Resolve a Buddy.works URL or pipeline name with `buddy resolve <input> --json`, then pass its `flags` (plus `execution` where needed).
 
 ## Example Interactions
 

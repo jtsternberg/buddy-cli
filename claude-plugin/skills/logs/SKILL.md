@@ -1,16 +1,30 @@
-# /buddy-cli:logs
+---
+name: logs
+description: Fetch and summarize Buddy.works pipeline execution logs by execution ID or app.buddy.works URL, optionally only failed actions.
+argument-hint: "[execution-id-or-url] [--pipeline=ID] [--action=NAME] [--errors-only]"
+disable-model-invocation: true
+---
+
+# Buddy Logs
+
+Invoked with: $ARGUMENTS
+
+Codex: the arguments are the text after the skill name in the request.
 
 Fetch and display pipeline execution logs.
 
 ## Usage
 
 ```
-/buddy-cli:logs [execution-id-or-url] [--pipeline=<id>] [--action=<name>] [--errors-only]
+/buddy-cli:logs [execution-id-or-url] [--pipeline=<id>] [--action=<name>] [--errors-only]     # Claude Code
+$buddy-cli:logs [execution-id-or-url] [--pipeline=<id>] [--action=<name>] [--errors-only]     # Codex
 ```
+
+Examples below use the Claude Code form.
 
 ## Arguments
 
-- `execution-id-or-url` - Specific execution ID or a Buddy.works URL (optional, defaults to latest). If a URL is given, parse it per the `buddy-cli:url-parser` agent.
+- `execution-id-or-url` - Specific execution ID or a Buddy.works URL (optional, defaults to latest). Resolve it with `buddy resolve <input> --json`.
 - `--pipeline=<id>` - Pipeline ID (required if execution-id provided, not needed if URL given)
 - `--action=<name>` - Filter to specific action
 - `--errors-only` - Only show failed actions
@@ -51,7 +65,7 @@ For failed actions, highlight:
 
 ## URL Support
 
-If a Buddy.works URL is provided, parse it using the `buddy-cli:url-parser` agent to extract workspace, project, pipeline, and execution IDs.
+Resolve a Buddy.works URL or pipeline name with `buddy resolve <input> --json`, then pass its `flags` (plus `execution` where needed).
 
 > **Note**: URL execution IDs are hex hashes. The CLI resolves them to integer IDs automatically.
 

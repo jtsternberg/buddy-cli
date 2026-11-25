@@ -184,6 +184,12 @@ BUDDY_SCOPES=<scopes>   # scopes `login` requests, e.g. PIPELINE_READ
 > [!TIP]
 > Run `buddy <command> --help` for detailed documentation including all options, supported fields, and examples.
 
+### Resolve
+
+```bash
+buddy resolve <url|name|id> --json        # Buddy.works URL or pipeline name → workspace/project/pipeline/execution + flags
+```
+
 ### Pipelines
 
 ```bash
@@ -279,9 +285,9 @@ All commands support:
 - `--project`, `-p` - Project name
 - `--json` - Output as JSON
 
-## Claude Code Plugin
+## Claude Code and Codex Plugin
 
-This repository includes a [Claude Code plugin](claude-plugin/.claude-plugin/README.md) for AI-assisted CI/CD management. Control deployments and debug pipelines using natural language.
+This repository includes a [plugin for Claude Code and Codex](claude-plugin/.claude-plugin/README.md) for AI-assisted CI/CD management. Control deployments and debug pipelines using natural language.
 
 ### Quick Example
 
@@ -304,11 +310,17 @@ Or point to your existing copy of the buddy-cli repository:
 /plugin marketplace add ./buddy-cli
 /plugin install buddy-cli
 ```
+
+In Codex:
+```bash
+codex plugin marketplace add jtsternberg/buddy-cli
+codex plugin add buddy-cli@buddy-marketplace
+```
 ### Features
 
 - **Skills**: Auto-invoked when discussing pipelines, deployments, or build failures
-- **Commands**: `/buddy-cli:deploy`, `/buddy-cli:status`, `/buddy-cli:logs`
-- **Agent**: CI/CD specialist for complex multi-step workflows
+- **User-invoked skills**: deploy, status, logs (`/buddy-cli:<skill>` in Claude Code, `$buddy-cli:<skill>` in Codex)
+- **Agent** (Claude Code only): CI/CD specialist for complex multi-step workflows
 
 See [claude-plugin/.claude-plugin/README.md](claude-plugin/.claude-plugin/README.md) for full documentation.
 

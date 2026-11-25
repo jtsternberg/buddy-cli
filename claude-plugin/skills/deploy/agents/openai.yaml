@@ -1,0 +1,5 @@
+interface:
+  display_name: Buddy Deploy
+  short_description: Run a Buddy.works pipeline and report the result
+policy:
+  allow_implicit_invocation: false

@@ -1,6 +1,6 @@
-# buddy-cli Claude Plugin
+# buddy-cli Plugin
 
-Claude Code plugin for Buddy.works CI/CD pipeline management. Enables natural language control of deployments, execution monitoring, and pipeline troubleshooting.
+Claude Code and Codex plugin for Buddy.works CI/CD pipeline management. Enables natural language control of deployments, execution monitoring, and pipeline troubleshooting.
 
 > **Warning:** This plugin executes commands that can trigger deployments, cancel executions, and modify pipelines on your Buddy.works account. Review commands before confirming execution.
 
@@ -40,6 +40,15 @@ git clone https://github.com/jtsternberg/buddy-cli
 /plugin marketplace add ./buddy-cli
 /plugin install buddy-cli
 ```
+
+### Codex
+
+```bash
+codex plugin marketplace add jtsternberg/buddy-cli     # or a local clone's path
+codex plugin add buddy-cli@buddy-marketplace
+```
+
+Start a new Codex session afterwards. Update with `codex plugin marketplace upgrade buddy-marketplace`.
 
 ### Update Project CLAUDE.md (Recommended)
 
@@ -117,21 +126,19 @@ Example prompts:
 - "The deploy is stuck, help me debug"
 - "Show me the error logs from the last run"
 
-### Commands (User-Invoked)
+### Skills (User-Invoked)
 
-Invoke directly with `/buddy-cli:<command>`:
+Invoke with `/buddy-cli:<skill>` in Claude Code or `$buddy-cli:<skill>` in Codex:
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/buddy-cli:deploy` | Run a pipeline | `/buddy-cli:deploy production` |
-| `/buddy-cli:status` | Show execution status | `/buddy-cli:status --latest` |
-| `/buddy-cli:logs` | View execution logs | `/buddy-cli:logs --errors-only` |
-### Agents
+| Skill | Description | Example (Claude Code) |
+|-------|-------------|---------|
+| deploy | Run a pipeline | `/buddy-cli:deploy production` |
+| status | Show execution status | `/buddy-cli:status production` |
+| logs | View execution logs | `/buddy-cli:logs --errors-only` |
 
-**url-parser** - Resolves `pipeline-name-or-id-or-url` inputs into CLI flags:
-- Parses Buddy.works URLs into workspace, project, pipeline, and execution IDs
-- Looks up pipeline names to find matching IDs
-- Returns structured flags for other commands to use
+### Agents (Claude Code only)
+
+Codex doesn't load plugin agents; the skills above cover the same ground there. URL and pipeline-name lookups use `buddy resolve`, so they work in both.
 
 **cicd-specialist** - Autonomous agent for complex CI/CD tasks:
 - Multi-step deployment workflows
@@ -211,10 +218,11 @@ Ask Claude about deployments or pipelines - skills should auto-invoke:
 - "What pipelines do I have?"
 - "Show me recent builds"
 
-### Test Commands
+### Test User-Invoked Skills
 
 ```
-/buddy-cli:status
+/buddy-cli:status        # Claude Code
+$buddy-cli:status        # Codex
 ```
 
 ## Troubleshooting
@@ -222,7 +230,7 @@ Ask Claude about deployments or pipelines - skills should auto-invoke:
 | Problem | Solution |
 |---------|----------|
 | Plugin not loading | Verify plugin.json is valid JSON |
-| Commands not found | Check commands/ directory has .md files |
+| Skill not found | Check `skills/<name>/SKILL.md` exists; start a new session after installing |
 | Skills not invoking | Ensure conversation mentions CI/CD topics |
 | Authentication errors | Run `buddy config:show` to verify token |
 | Wrong project | Set `BUDDY_WORKSPACE` and `BUDDY_PROJECT` |

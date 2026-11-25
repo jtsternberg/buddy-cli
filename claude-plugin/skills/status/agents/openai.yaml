@@ -1,0 +1,5 @@
+interface:
+  display_name: Buddy Status
+  short_description: Show running and recent Buddy.works executions
+policy:
+  allow_implicit_invocation: false

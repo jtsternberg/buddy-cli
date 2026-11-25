@@ -1,0 +1,27 @@
+{
+  "name": "buddy-cli",
+  "version": "1.11.0",
+  "description": "Buddy.works CI/CD pipeline management through the buddy CLI: run deployments, check execution status, read logs, and troubleshoot failures.",
+  "author": {
+    "name": "Justin Sternberg",
+    "url": "https://github.com/jtsternberg/buddy-cli"
+  },
+  "repository": "https://github.com/jtsternberg/buddy-cli",
+  "license": "MIT",
+  "keywords": ["ci", "ci/cd", "buddy.works", "pipelines", "deployment"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Buddy CLI",
+    "shortDescription": "Run, monitor and debug Buddy.works pipelines",
+    "longDescription": "Drive Buddy.works CI/CD from your agent with the buddy CLI: run and follow deployments, list executions, read action logs, and diagnose failed builds.",
+    "developerName": "Justin Sternberg",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/jtsternberg/buddy-cli",
+    "defaultPrompt": [
+      "Use $buddy-cli:status to show recent Buddy.works executions.",
+      "Use $buddy-cli:logs to read the logs of a failed execution.",
+      "Use $buddy-cli:deploy to run a Buddy.works pipeline."
+    ]
+  }
+}

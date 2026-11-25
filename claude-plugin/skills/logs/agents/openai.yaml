@@ -1,0 +1,5 @@
+interface:
+  display_name: Buddy Logs
+  short_description: Show Buddy.works execution logs and errors
+policy:
+  allow_implicit_invocation: false

@@ -55,7 +55,7 @@ buddy vars:set --pipeline=<id> -- KEY "value"
 
 ## Guidelines
 
-- When users provide `app.buddy.works` URLs, parse them using the `buddy-cli:url-parser` agent
+- When users provide `app.buddy.works` URLs, resolve them with `buddy resolve <url> --json`
 - Always use `--json` flag when parsing output programmatically
 - Check configuration before running commands (`buddy config:show`)
 - For failures, prioritize getting logs before suggesting fixes

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The plugin now installs in Codex too (`codex plugin marketplace add jtsternberg/buddy-cli`, then `codex plugin add buddy-cli@buddy-marketplace`).
+- `buddy resolve <url|name|id>` turns a Buddy.works URL, pipeline name or ID into workspace, project, pipeline, execution and action-execution values plus ready flags (`--json` for agents). An exact name wins over partial matches; ambiguous or unknown names fail and list the candidates.
+
+### Changed
+
+- The plugin's `deploy`, `status` and `logs` slash commands are now user-invoked skills: still `/buddy-cli:deploy` etc. in Claude Code, and `$buddy-cli:deploy` etc. in Codex.
+
+### Removed
+
+- The `url-parser` plugin agent. `buddy resolve` does its job deterministically and works in both harnesses.
+
 ## [1.11.0] - 2026-11-25
 
 ### Added

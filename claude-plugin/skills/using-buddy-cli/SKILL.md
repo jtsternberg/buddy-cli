@@ -20,7 +20,7 @@ OAuth options (narrow `--scopes`, headless `--paste` over SSH): COMMANDS.md → 
 
 ## Buddy.works URLs
 
-Parse a pasted URL with the `buddy-cli:url-parser` agent to get workspace, project, pipeline and execution IDs. Hex execution IDs from URLs work as-is.
+Turn a pasted URL, pipeline name or ID into flags with `buddy resolve <input> --json`. It returns `workspace`, `project`, `pipeline`, `execution` and `action_execution` (whichever apply) and a ready `flags` string. Use them for the next command only; don't `config:set` them. Hex execution IDs work as-is. An ambiguous name fails and lists the candidates, so ask which one.
 
 ## Core commands
 

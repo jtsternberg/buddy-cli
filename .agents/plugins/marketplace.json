@@ -1,0 +1,16 @@
+{
+  "name": "buddy-marketplace",
+  "interface": {
+    "displayName": "buddy-cli"
+  },
+  "plugins": [
+    {
+      "name": "buddy-cli",
+      "source": {
+        "source": "local",
+        "path": "./claude-plugin"
+      },
+      "category": "Coding"
+    }
+  ]
+}
