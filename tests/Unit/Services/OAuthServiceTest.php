@@ -246,4 +246,77 @@ class OAuthServiceTest extends TestCase
 
         $testable->refreshToken('refresh-token');
     }
+    // Scope parsing and validation
+
+    public function testParseScopesAcceptsCommaList(): void
+    {
+        $this->assertSame(['PIPELINE_READ', 'WORKSPACE_READ'], OAuthService::parseScopes('PIPELINE_READ,WORKSPACE_READ'));
+    }
+
+    public function testParseScopesAcceptsSpaceListAndMixedSeparators(): void
+    {
+        $this->assertSame(
+            ['WORKSPACE', 'EXECUTION_INFO', 'PIPELINE_READ'],
+            OAuthService::parseScopes(' WORKSPACE  EXECUTION_INFO, pipeline_read ')
+        );
+    }
+
+    public function testParseScopesDropsDuplicates(): void
+    {
+        $this->assertSame(['PIPELINE_READ'], OAuthService::parseScopes('PIPELINE_READ,pipeline_read'));
+    }
+
+    public function testParseScopesRejectsUnknownScopeByName(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown scope: PIPELINE_INFO');
+
+        OAuthService::parseScopes('PIPELINE_READ,PIPELINE_INFO');
+    }
+
+    public function testParseScopesRejectsEmptyList(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        OAuthService::parseScopes(' , ');
+    }
+
+    public function testDefaultScopesAreAllKnown(): void
+    {
+        $defaults = $this->service->getDefaultScopes();
+
+        $this->assertSame($defaults, OAuthService::parseScopes(implode(',', $defaults)));
+    }
+
+    // Callback URL parsing (paste-back login)
+
+    public function testParseCallbackUrlExtractsCodeAndState(): void
+    {
+        $result = OAuthService::parseCallbackUrl('http://127.0.0.1:8085/callback?code=abc123&state=xyz');
+
+        $this->assertSame(['code' => 'abc123', 'state' => 'xyz'], $result);
+    }
+
+    public function testParseCallbackUrlAcceptsBareQueryString(): void
+    {
+        $result = OAuthService::parseCallbackUrl("  ?state=xyz&code=abc123\n");
+
+        $this->assertSame(['code' => 'abc123', 'state' => 'xyz'], $result);
+    }
+
+    public function testParseCallbackUrlReportsAuthorizationError(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Authorization denied: access_denied');
+
+        OAuthService::parseCallbackUrl('http://127.0.0.1:8085/callback?error=access_denied&state=xyz');
+    }
+
+    public function testParseCallbackUrlRequiresCode(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No authorization code');
+
+        OAuthService::parseCallbackUrl('http://127.0.0.1:8085/callback?state=xyz');
+    }
 }

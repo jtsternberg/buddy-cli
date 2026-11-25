@@ -10,6 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 
 class LoginCommand extends Command
 {
@@ -32,6 +33,8 @@ class LoginCommand extends Command
             ->addOption('client-secret', null, InputOption::VALUE_REQUIRED, 'OAuth client secret')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Port for callback server', (string) self::DEFAULT_PORT)
             ->addOption('no-browser', null, InputOption::VALUE_NONE, 'Print URL instead of opening browser')
+            ->addOption('paste', null, InputOption::VALUE_NONE, 'Headless: log in on any machine, then paste the redirected URL back here')
+            ->addOption('scopes', null, InputOption::VALUE_REQUIRED, 'Comma- or space-separated OAuth scopes to request instead of the defaults')
             ->addOption('test', null, InputOption::VALUE_NONE, 'Test callback server without OAuth (for verifying setup)')
             ->setHelp(<<<'HELP'
 Authenticate with Buddy via OAuth browser flow.
@@ -46,11 +49,26 @@ Authenticate with Buddy via OAuth browser flow.
   BUDDY_CLIENT_ID/BUDDY_CLIENT_SECRET environment variables
   Values stored with config:set client_id/client_secret
 
+<comment>Scopes:</comment>
+  --scopes, else BUDDY_SCOPES, else config:set scopes, else the defaults.
+  Unknown names are rejected. The scopes requested are stored as
+  granted_scopes (shown by config:show). A call the scopes don't cover fails
+  with a 403 naming the scope it needs. Refreshing keeps the same scopes.
+  Minimum to read pipelines and executions: PIPELINE_READ
+
+<comment>Headless (SSH) login:</comment>
+  --paste prints the URL and starts no callback server. Open the URL in a
+  browser on any machine and approve. The browser then fails to load
+  http://127.0.0.1:<port>/callback?code=...; copy that whole address-bar URL
+  and paste it at the prompt. The code is single-use and short-lived.
+
 Options:
       --client-id      OAuth client ID
       --client-secret  OAuth client secret
       --port           Local server port for callback (default: 8085)
-      --no-browser     Print auth URL instead of opening browser (for SSH/headless)
+      --no-browser     Print auth URL instead of opening browser (callback still goes to this machine)
+      --paste          Paste the redirected URL back instead of running a callback server
+      --scopes         OAuth scopes to request (e.g. PIPELINE_READ,WORKSPACE_READ)
       --test           Verify callback server works without full OAuth flow
 
 Examples:
@@ -58,6 +76,7 @@ Examples:
   buddy login --client-id=abc --client-secret=xyz
   buddy login --port=9000
   buddy login --no-browser
+  buddy login --paste --scopes=PIPELINE_READ
   buddy login --test
 HELP);
     }
@@ -94,16 +113,49 @@ HELP);
             return self::FAILURE;
         }
 
+        $scopeList = $input->getOption('scopes') ?? $config->get('scopes');
+        try {
+            $scopes = $scopeList !== null ? OAuthService::parseScopes($scopeList) : null;
+        } catch (\InvalidArgumentException $e) {
+            $output->writeln('<error>' . $e->getMessage() . '</error>');
+            return self::FAILURE;
+        }
+
+        $oauth = $this->createOAuthService($clientId, $clientSecret);
+        $scopes ??= $oauth->getDefaultScopes();
+        $state = $oauth->generateState();
+        $redirectUri = "http://127.0.0.1:{$port}/callback";
+        $authorizeUrl = $oauth->getAuthorizeUrl($redirectUri, $state, $scopes);
+
+        if ($input->getOption('paste')) {
+            $output->writeln('Open this URL in a browser on any machine and approve access:');
+            $output->writeln($authorizeUrl);
+            $output->writeln('');
+            $output->writeln("The browser will then fail to load {$redirectUri}?code=... — that is expected.");
+
+            $question = new Question('Paste that full address-bar URL here: ');
+            $pasted = (string) $this->getHelper('question')->ask($input, $output, $question);
+
+            try {
+                $result = OAuthService::parseCallbackUrl($pasted);
+            } catch (\RuntimeException $e) {
+                $output->writeln('<error>' . $e->getMessage() . '</error>');
+                return self::FAILURE;
+            }
+
+            if (!hash_equals($state, $result['state'])) {
+                $output->writeln('<error>The pasted URL\'s state does not match this login attempt. Paste the URL from this run\'s link, or start over.</error>');
+                return self::FAILURE;
+            }
+
+            return $this->completeLogin($oauth, $result['code'], $redirectUri, $scopes, $output);
+        }
+
         // Check if port is available
         if (!$this->isPortAvailable($port)) {
             $output->writeln("<error>Port {$port} is not available. Try --port=PORT with a different port.</error>");
             return self::FAILURE;
         }
-
-        $oauth = new OAuthService($clientId, $clientSecret);
-        $state = $oauth->generateState();
-        $redirectUri = "http://127.0.0.1:{$port}/callback";
-        $authorizeUrl = $oauth->getAuthorizeUrl($redirectUri, $state);
 
         // Start callback server
         $socket = $this->createCallbackServer($port);
@@ -132,21 +184,37 @@ HELP);
             return self::FAILURE;
         }
 
-        // Exchange code for token
+        return $this->completeLogin($oauth, $result['code'], $redirectUri, $scopes, $output);
+    }
+
+    protected function createOAuthService(string $clientId, string $clientSecret): OAuthService
+    {
+        return new OAuthService($clientId, $clientSecret);
+    }
+
+    /**
+     * @param string[] $scopes
+     */
+    private function completeLogin(OAuthService $oauth, string $code, string $redirectUri, array $scopes, OutputInterface $output): int
+    {
+        $config = $this->app->getConfigService();
+
         try {
             $output->writeln('Exchanging code for token...');
-            $tokenData = $oauth->exchangeCodeForToken($result['code'], $redirectUri);
+            $tokenData = $oauth->exchangeCodeForToken($code, $redirectUri);
 
-            // Save token
             $config->set('token', $tokenData['access_token']);
 
-            // Save refresh token if provided
             if (isset($tokenData['refresh_token'])) {
                 $config->set('refresh_token', $tokenData['refresh_token']);
             }
 
+            // Buddy's token response carries no scope field, so record what was requested.
+            $config->set('granted_scopes', implode(',', $scopes));
+
             $output->writeln('');
             $output->writeln('<info>✓ Logged in successfully!</info>');
+            $output->writeln('Scopes: ' . implode(', ', $scopes));
 
             return self::SUCCESS;
         } catch (\Exception $e) {

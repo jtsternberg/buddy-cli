@@ -121,6 +121,32 @@ buddy login --client-id=<id> --client-secret=<secret>
 
 This opens your browser to authenticate with Buddy and saves your token automatically.
 
+#### Narrowing scopes
+
+By default `login` requests broad scopes so every command works. To request fewer, pass `--scopes` (comma- or space-separated), set `BUDDY_SCOPES`, or `buddy config:set scopes <list>`. Unknown names are rejected. Scope names are [Buddy's](https://buddy.works/docs/api/getting-started/oauth2/introduction#supported-scopes); higher ones contain lower ones (`PIPELINE_RUN` includes `PIPELINE_READ`).
+
+```bash
+# Read-only: list pipelines, executions, logs
+buddy login --scopes=PIPELINE_READ
+```
+
+The requested scopes are saved as `granted_scopes` (see `config:show`). A call the token's scopes don't cover fails with a 403 that names the scope it needs. Token refresh keeps the same scopes.
+
+#### Headless login (SSH)
+
+The OAuth callback goes to `127.0.0.1` on the machine running `buddy`, so a browser on another machine can't reach it. Use `--paste`:
+
+```bash
+ssh you@server            # interactive session; the prompt needs a terminal
+buddy login --paste --scopes=PIPELINE_READ
+```
+
+1. Open the printed URL in a browser on any machine and approve.
+2. The browser fails to load `http://127.0.0.1:8085/callback?code=...`. That's expected.
+3. Copy the full address-bar URL and paste it at the prompt. The CLI checks the `state` and exchanges the code. The code is single-use and short-lived, so paste promptly.
+
+`--no-browser` alone still waits for the callback on the server, which works only if you forward the port (`ssh -L 8085:127.0.0.1:8085 you@server`).
+
 ## Configuration
 
 Configuration can be set via environment variables, config files, or command-line flags.
@@ -131,6 +157,7 @@ Configuration can be set via environment variables, config files, or command-lin
 BUDDY_TOKEN=<token>
 BUDDY_WORKSPACE=<workspace-name>
 BUDDY_PROJECT=<project-name>
+BUDDY_SCOPES=<scopes>   # scopes `login` requests, e.g. PIPELINE_READ
 ```
 
 ### Config Files

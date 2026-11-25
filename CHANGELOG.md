@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `login --scopes=<list>` (also `BUDDY_SCOPES` / `config:set scopes`) requests only the given OAuth scopes, validated against Buddy's scope names. Defaults are unchanged.
+- `login --paste` for headless/SSH logins: approve in a browser on any machine, then paste the redirected `127.0.0.1` URL back into the CLI.
+- The requested scopes are saved as `granted_scopes` and shown by `config:show`. A 403 from Buddy now names the scope the call needs and how to log in with it.
+
 ## [1.10.1] - 2026-11-24
 
 ### Added

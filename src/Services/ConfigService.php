@@ -16,6 +16,7 @@ class ConfigService
         'project' => 'BUDDY_PROJECT',
         'client_id' => 'BUDDY_CLIENT_ID',
         'client_secret' => 'BUDDY_CLIENT_SECRET',
+        'scopes' => 'BUDDY_SCOPES',
     ];
 
     public function __construct()

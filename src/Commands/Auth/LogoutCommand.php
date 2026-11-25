@@ -32,6 +32,7 @@ class LogoutCommand extends Command
 
         $config->remove('token');
         $config->remove('refresh_token');
+        $config->remove('granted_scopes');
 
         $output->writeln('<info>Logged out successfully.</info>');
 

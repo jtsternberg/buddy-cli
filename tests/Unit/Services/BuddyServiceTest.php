@@ -326,4 +326,37 @@ class BuddyServiceTest extends TestCase
         $this->expectException(BuddyResponseException::class);
         $this->service->getWorkspaces();
     }
+    // Scope errors
+
+    public function testRecordedScopesDoNotBlockCalls(): void
+    {
+        // granted_scopes can outlive its token (config:set token, a project
+        // .buddy-cli.json), so the API is the only judge of what a token may do.
+        $this->config->set('granted_scopes', 'PIPELINE_READ');
+        $expected = ['id' => 1];
+
+        $executionsApi = $this->createMock(ExtendedExecutions::class);
+        $executionsApi->method('runExecution')->willReturn($this->createMockResponse($expected));
+        $this->mockBuddy->method('getApiExecutions')->willReturn($executionsApi);
+
+        $this->assertSame($expected, $this->service->runExecution('my-ws', 'project1', 1));
+    }
+
+    public function testForbiddenResponseNamesRequiredScope(): void
+    {
+        $exception = new BuddyResponseException(403, [], '{"errors":[{"message":"Forbidden"}]}');
+
+        $executionsApi = $this->createMock(ExtendedExecutions::class);
+        $executionsApi->method('getExecutions')->willThrowException($exception);
+        $this->mockBuddy->method('getApiExecutions')->willReturn($executionsApi);
+
+        try {
+            $this->service->getExecutions('my-ws', 'project1', 1);
+            $this->fail('Expected exception');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('403', $e->getMessage());
+            $this->assertStringContainsString('PIPELINE_READ', $e->getMessage());
+            $this->assertSame($exception, $e->getPrevious());
+        }
+    }
 }
