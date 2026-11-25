@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-11-25
+
 ### Added
 
 - `login --scopes=<list>` (also `BUDDY_SCOPES` / `config:set scopes`) requests only the given OAuth scopes, validated against Buddy's scope names. Defaults are unchanged.
