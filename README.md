@@ -302,13 +302,13 @@ You: "Show me what's currently running"
 In Claude Code:
 ```
 /plugin marketplace add jtsternberg/buddy-cli
-/plugin install buddy-cli
+/plugin install buddy-cli@buddy-marketplace
 ```
 
 Or point to your existing copy of the buddy-cli repository:
 ```
 /plugin marketplace add ./buddy-cli
-/plugin install buddy-cli
+/plugin install buddy-cli@buddy-marketplace
 ```
 
 In Codex:

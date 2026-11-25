@@ -8,8 +8,7 @@
     {
       "name": "buddy-cli",
       "source": "./claude-plugin",
-      "description": "CI/CD pipeline management for Buddy.works",
-      "version": "1.0.0"
+      "description": "Buddy.works CI/CD pipeline management through the buddy CLI: run deployments, check execution status, read logs, and troubleshoot failures."
     }
   ]
 }

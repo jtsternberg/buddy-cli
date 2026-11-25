@@ -1,6 +1,6 @@
 {
   "name": "buddy-cli",
-  "description": "Claude Code plugin for Buddy.works CI/CD pipeline management",
+  "description": "Buddy.works CI/CD pipeline management through the buddy CLI: run deployments, check execution status, read logs, and troubleshoot failures.",
   "version": "1.12.0",
   "author": {
     "name": "Justin Sternberg",

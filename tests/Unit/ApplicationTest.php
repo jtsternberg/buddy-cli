@@ -50,6 +50,18 @@ class ApplicationTest extends TestCase
         $this->assertSame($manifest['version'], Application::VERSION);
     }
 
+    // Directory listings read the catalog entry, not the manifest; a version there went stale at 1.0.0.
+    public function testMarketplaceEntryMirrorsPluginManifest(): void
+    {
+        $root = __DIR__ . '/../..';
+        $manifest = json_decode((string) file_get_contents($root . '/claude-plugin/.claude-plugin/plugin.json'), true);
+        $catalog = json_decode((string) file_get_contents($root . '/.claude-plugin/marketplace.json'), true);
+        $entry = array_values(array_filter($catalog['plugins'], fn ($p) => $p['name'] === $manifest['name']))[0];
+
+        $this->assertSame($manifest['description'], $entry['description']);
+        $this->assertArrayNotHasKey('version', $entry);
+    }
+
     public function testApplicationRegistersCommands(): void
     {
         $app = new Application();

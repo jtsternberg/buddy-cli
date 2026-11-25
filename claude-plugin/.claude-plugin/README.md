@@ -10,7 +10,7 @@ Claude Code and Codex plugin for Buddy.works CI/CD pipeline management. Enables 
 
 ```
 /plugin marketplace add jtsternberg/buddy-cli
-/plugin install buddy-cli
+/plugin install buddy-cli@buddy-marketplace
 ```
 
 ### Option 2: From Local Path
@@ -25,7 +25,7 @@ If you already have buddy-cli locally (via composer or git clone), point to it:
 /plugin marketplace add /path/to/buddy-cli
 
 # Then install:
-/plugin install buddy-cli
+/plugin install buddy-cli@buddy-marketplace
 ```
 
 ### Option 3: Clone for Development
@@ -38,7 +38,7 @@ git clone https://github.com/jtsternberg/buddy-cli
 
 ```
 /plugin marketplace add ./buddy-cli
-/plugin install buddy-cli
+/plugin install buddy-cli@buddy-marketplace
 ```
 
 ### Codex
