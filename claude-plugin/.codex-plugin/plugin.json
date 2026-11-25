@@ -1,6 +1,6 @@
 {
   "name": "buddy-cli",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Buddy.works CI/CD pipeline management through the buddy CLI: run deployments, check execution status, read logs, and troubleshoot failures.",
   "author": {
     "name": "Justin Sternberg",

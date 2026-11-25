@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-11-25
+
 ### Added
 
 - The plugin now installs in Codex too (`codex plugin marketplace add jtsternberg/buddy-cli`, then `codex plugin add buddy-cli@buddy-marketplace`).
