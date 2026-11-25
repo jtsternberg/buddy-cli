@@ -48,8 +48,8 @@ When the user provides a Buddy.works URL, parse it using the `buddy-cli:url-pars
 # List recent executions (returns integer IDs)
 buddy executions:list --pipeline=<id>
 
-# Find the latest failed execution
-buddy executions:list --pipeline=<id> --json | jq '[.[] | select(.status == "FAILED")] | .[0]'
+# Find the latest failed execution (filters the last 100 runs)
+buddy executions:list --pipeline=<id> --status=FAILED --limit=1
 ```
 
 ## Common Failure Patterns
@@ -64,6 +64,8 @@ buddy executions:list --pipeline=<id> --json | jq '[.[] | select(.status == "FAI
 | "npm ERR!" / "composer error" | Dependency issues | Clear cache, check lock files |
 | "out of memory" | Container resource limits | Increase container resources or memory variable |
 | Exit code 1 | Generic failure | Check action logs for specifics |
+| "requires the X scope" / 403 "Insufficient scopes" | OAuth login didn't request that scope | `buddy login --scopes=<current,X>` (current list: `granted_scopes` in `config:show`) |
+| 401 "Wrong authentication data" | Token expired and refresh failed | `buddy login` |
 
 ## Decision Tree
 
@@ -99,7 +101,9 @@ buddy vars:set --pipeline=<id> -- KEY "value"
 
 ### Cancel a stuck execution
 ```bash
-buddy pipelines:cancel <pipeline-id>
+buddy pipelines:cancel <pipeline-id>                         # The running one; leaves queued runs alone
+buddy executions:list --pipeline=<id> --status=ENQUEUED      # A run stuck in the queue
+buddy pipelines:cancel <pipeline-id> --execution=<exec-id>   # Cancel that specific run
 ```
 
 ### Check configuration

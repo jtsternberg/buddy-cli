@@ -1,12 +1,12 @@
 # buddy-cli Command Reference
 
-Complete command reference for the buddy CLI.
+Complete command reference for the buddy CLI. `buddy <command> --help` is authoritative for options.
 
-## Global Options
+## Common Options
 
-All commands support:
+Resource commands (pipelines, executions, actions, variables, webhooks, projects) take:
 - `--workspace`, `-w` - Workspace name
-- `--project`, `-p` - Project name
+- `--project`, `-p` - Project name (on `webhooks:*` it is a filter, not context)
 - `--json` - Output as JSON
 
 ## Pipeline Commands
@@ -31,7 +31,10 @@ Run a pipeline.
 buddy pipelines:run <pipeline-id>
 buddy pipelines:run <pipeline-id> --branch=main
 buddy pipelines:run <pipeline-id> --wait  # Wait for completion
-buddy pipelines:run <pipeline-id> --var KEY=VALUE  # Pass variables
+buddy pipelines:run <pipeline-id> --var KEY=VALUE  # Pass variables (repeatable)
+buddy pipelines:run <pipeline-id> --follow  # Stream action-by-action progress (implies --wait)
+buddy pipelines:run <pipeline-id> --tag=v1.2.0
+buddy pipelines:run <pipeline-id> --revision=<sha> --comment="Hotfix deploy"
 ```
 
 ### pipelines:retry
@@ -51,6 +54,15 @@ buddy pipelines:cancel <pipeline-id> --execution=<execution-id>
 Get pipeline config as YAML file. Writes `pipeline-<id>.yaml` to the current directory unless `-o <path>` is given.
 ```bash
 buddy pipelines:get <pipeline-id>
+buddy pipelines:get <pipeline-id> --output=templates/build.yaml
+```
+
+### pipelines:settings
+Show or update pipeline settings (metadata + variables only; actions untouched).
+```bash
+buddy pipelines:settings <pipeline-id>                  # Table
+buddy pipelines:settings <pipeline-id> --yaml           # Settings + variables as YAML
+buddy pipelines:settings <pipeline-id> --update settings.yaml
 ```
 
 ### pipelines:create
@@ -88,6 +100,8 @@ buddy pipelines:delete <pipeline-id> --force --json   # {"deleted":true,"id":...
 List recent executions.
 ```bash
 buddy executions:list --pipeline=<pipeline-id>
+buddy executions:list --pipeline=<pipeline-id> --limit=20         # Default 10
+buddy executions:list --pipeline=<pipeline-id> --status=FAILED    # Filtered CLI-side over the last 100 runs
 ```
 
 ### executions:show
@@ -186,6 +200,7 @@ buddy vars:set KEY value
 buddy vars:set KEY value --project=<name>
 buddy vars:set KEY value --pipeline=<pipeline-id>
 buddy vars:set KEY value --encrypted
+buddy vars:set DEBUG true --pipeline=<pipeline-id> --settable --description="Verbose logs"  # Overridable on manual runs
 ```
 
 **Gotchas:**
@@ -249,6 +264,18 @@ buddy vars:delete <var-id>
 buddy vars:delete <var-id> --force
 ```
 
+## Webhook Commands
+
+Workspace-level. Events: `PUSH`, `EXECUTION_STARTED`, `EXECUTION_SUCCESSFUL`, `EXECUTION_FAILED`, `EXECUTION_FINISHED`.
+```bash
+buddy webhooks:list
+buddy webhooks:show <webhook-id>
+buddy webhooks:create --url=https://example.com/hook --events=EXECUTION_FAILED,EXECUTION_SUCCESSFUL [--project=<name>] [--secret=<key>]
+buddy webhooks:update <webhook-id> --events=PUSH        # --events replaces the list; --project="" clears the filter
+buddy webhooks:update <webhook-id> --url=<new-url> --secret=<key>
+buddy webhooks:delete <webhook-id> [--force]
+```
+
 ## Project Commands
 
 ### projects:list
@@ -290,19 +317,34 @@ buddy config:clear
 Validate configuration is complete and working.
 ```bash
 buddy config:validate
-buddy config:validate --test-api  # Also test API connectivity
+buddy config:validate --test-api  # Also test API connectivity (needs WORKSPACE_READ on a narrowed OAuth login)
 ```
 
 ## Authentication Commands
 
-### auth:login
-OAuth login (opens browser).
+### login
+OAuth login (opens browser). Needs an OAuth app's credentials (`--client-id`/`--client-secret`, `BUDDY_CLIENT_ID`/`BUDDY_CLIENT_SECRET`, or `config:set client_id`/`client_secret`) with callback `http://127.0.0.1:8085/callback`.
 ```bash
 buddy login
+buddy login --port=9000                     # Callback port (must match the app's callback URL)
+buddy login --no-browser                    # Print the URL; callback still lands on THIS machine (ssh -L 8085:127.0.0.1:8085 to tunnel)
+buddy login --test                          # Verify the callback server without OAuth
+buddy login --scopes=PIPELINE_READ          # Narrow scopes (comma/space list; also BUDDY_SCOPES or config:set scopes)
+buddy login --paste --scopes=PIPELINE_READ  # Headless/SSH: approve in any browser, paste the redirected URL back
 ```
+- `--scopes` rejects unknown names. The requested scopes are saved as `granted_scopes` (shown by `config:show`). A call the token's scopes don't cover fails with a 403 naming the scope it needs (e.g. `requires the VARIABLE_READ scope`). Refresh keeps the same scopes.
+- `--paste`: the browser's redirect to `http://127.0.0.1:8085/callback?code=...` fails to load. Copy that full URL into the prompt. Needs an interactive terminal (`ssh -t` if running remotely).
+- Minimum read-only scope for pipelines/executions/logs: `PIPELINE_READ`. Hierarchy: `PIPELINE_READ` < `PIPELINE_RUN` < `PIPELINE_WRITE` < `PIPELINE_MANAGE` (same pattern for VARIABLE, WEBHOOK, PROJECT).
 
-### auth:logout
+### logout
 Clear saved credentials.
 ```bash
 buddy logout
+```
+
+## Install
+
+```bash
+./bin/buddy self:install                    # Symlink `buddy` into a PATH dir
+./bin/buddy self:install --bin-dir="$HOME/bin" --force
 ```

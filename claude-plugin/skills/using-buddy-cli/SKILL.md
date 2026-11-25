@@ -5,91 +5,42 @@ description: Manages CI/CD pipelines via the buddy CLI tool. Use when running de
 
 # Using buddy-cli
 
-The `buddy` CLI manages Buddy.works CI/CD pipelines from the command line.
+The `buddy` CLI manages Buddy.works CI/CD pipelines. Resource commands take `--json` for machine-readable output, and `--workspace`/`--project` to override the configured context. `buddy <command> --help` lists every option.
 
-## Prerequisites
-
-Configuration must be set before use:
+## Setup
 
 ```bash
-# Authentication (required)
-export BUDDY_TOKEN=<token>  # or: buddy config:set token <token>
-
-# Context (required for most commands)
+export BUDDY_TOKEN=<token>     # or: buddy config:set token <token>, or OAuth: buddy login
 export BUDDY_WORKSPACE=<name>  # or: buddy config:set workspace <name>
 export BUDDY_PROJECT=<name>    # or: buddy config:set project <name>
+buddy config:validate --test-api   # needs WORKSPACE_READ on a narrowed OAuth login
 ```
 
-Validate with: `${CLAUDE_PLUGIN_ROOT}/scripts/validate_config.sh`
+OAuth options (narrow `--scopes`, headless `--paste` over SSH): COMMANDS.md → login.
 
-## Working with Buddy.works URLs
+## Buddy.works URLs
 
-When a user provides a Buddy.works URL, parse it using the `buddy-cli:url-parser` agent to extract workspace, project, pipeline, and execution IDs. The CLI accepts both hash and integer execution IDs.
+Parse a pasted URL with the `buddy-cli:url-parser` agent to get workspace, project, pipeline and execution IDs. Hex execution IDs from URLs work as-is.
 
-## Quick Reference
-
-### Troubleshooting (most important for failures)
-```bash
-buddy executions:failed <id> --pipeline=<id>            # Failed action logs
-buddy executions:show <id> --pipeline=<id> --logs       # ALL action logs
-buddy executions:show <id> --pipeline=<id> --logs -v    # Same, surface skipped errors
-buddy executions:failed <id> --pipeline=<id> --analyze  # Error pattern analysis
-buddy executions:show <id> --pipeline=<id> --summary    # Compact status overview
-buddy executions:actions <id> --pipeline=<id>            # List actions with execution IDs
-buddy executions:action-logs <id> <action-exec-id> --pipeline=<id>  # One action's logs
-```
-
-### Pipelines
-```bash
-buddy pipelines:list                    # List all pipelines
-buddy pipelines:show <id>               # Show pipeline details
-buddy pipelines:run <id>                # Run a pipeline
-buddy pipelines:run <id> --wait         # Run and wait for completion
-buddy pipelines:run <id> --branch=<b>   # Run wildcard pipeline on branch
-buddy pipelines:retry <id>              # Retry last failed execution
-buddy pipelines:cancel <id>             # Cancel running execution (--execution=<id> for a specific run)
-buddy pipelines:create pipeline.yaml    # Create from YAML file
-buddy pipelines:create --name="X" --on=MANUAL --refs=refs/heads/main  # Create via flags
-buddy pipelines:get <id>                # Export pipeline config as YAML
-buddy pipelines:delete <id>             # Delete pipeline (confirms; --force to skip)
-```
-
-### Executions
-```bash
-buddy executions:list --pipeline=<id>              # List recent executions
-buddy executions:show <id> --pipeline=<id>         # Show execution details
-```
-
-### Configuration
-```bash
-buddy config:show                       # Show current configuration
-buddy config:set <key> <value>          # Set configuration value
-```
-
-## JSON Output
-
-Add `--json` to any command for machine-readable output:
+## Core commands
 
 ```bash
-buddy pipelines:list --json | jq '.[] | {id, name, status}'
-buddy executions:show <id> --pipeline=<id> --json | php ${CLAUDE_PLUGIN_ROOT}/scripts/format_status.php
-```
-
-## Common Workflows
-
-### Run a deployment
-```bash
-# Find pipeline ID
 buddy pipelines:list
-
-# Run and monitor
-buddy pipelines:run <id> --wait
+buddy pipelines:run <id> [--branch=<b>] [--wait|--follow]
+buddy executions:list --pipeline=<id> [--status=FAILED]
+buddy executions:failed <exec-id> --pipeline=<id>        # Failed action logs
+buddy executions:show <exec-id> --pipeline=<id> --logs   # All action logs
 ```
 
-### Check recent activity
-```bash
-buddy executions:list --pipeline=<id>
-buddy executions:show <exec-id> --pipeline=<id>
-```
+For a failed build, use the `buddy-cli:troubleshooting-pipelines` skill.
 
-See COMMANDS.md for full command reference, WORKFLOWS.md for detailed patterns.
+## Reference
+
+- **COMMANDS.md**: every command and option: pipelines, executions, actions, variables, webhooks, projects, config, login.
+- **WORKFLOWS.md**: multi-step patterns (deploy and monitor, YAML export/edit, variables, scripting with `--json`).
+
+## Gotchas
+
+- Pipeline ID is positional for `pipelines:run/retry/cancel/show`, but `--pipeline=<id>` for `executions:*` and `vars:*`.
+- There is no `buddy api` command. Use the subcommands.
+- `vars:set` values starting with `--` need options first: `buddy vars:set --pipeline=X -- KEY "--value"`.

@@ -40,6 +40,7 @@ Options:
   -c, --comment    Comment to attach to this execution
       --var        Set a pipeline variable (can be used multiple times)
       --wait       Wait for execution to complete before returning
+      --follow     Stream live action-by-action progress (implies --wait)
 
 Examples:
   buddy pipelines:run 12345 --project=my-project
@@ -47,6 +48,7 @@ Examples:
   buddy pipelines:run 12345 --revision=abc123 --comment="Hotfix deploy"
   buddy pipelines:run 12345 --var="VERSION=1.0" --var="DEBUG=true"
   buddy pipelines:run 12345 --wait
+  buddy pipelines:run 12345 --follow
 HELP);
 
         $this->addWorkspaceOption();

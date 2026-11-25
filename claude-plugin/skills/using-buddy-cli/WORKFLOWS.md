@@ -33,13 +33,10 @@ buddy executions:list --pipeline=<id>
 ## Monitor a Deployment
 
 ```bash
-# Start deployment in background
-buddy pipelines:run <id>
+# Live action-by-action progress; exits when the run finishes
+buddy pipelines:run <id> --follow
 
-# Poll for status
-watch -n 10 "buddy executions:list --pipeline=<id> --json | head -1"
-
-# When done, check details
+# Afterwards, details of a specific run
 buddy executions:show <exec-id> --pipeline=<id>
 ```
 
@@ -147,15 +144,4 @@ if [ "$STATUS" = "FAILED" ]; then
   echo "Last execution failed"
   exit 1
 fi
-```
-
-### Retry with backoff
-```bash
-#!/bin/bash
-for i in 1 2 3; do
-  buddy pipelines:retry <id> && exit 0
-  sleep $((i * 30))
-done
-echo "All retries failed"
-exit 1
 ```

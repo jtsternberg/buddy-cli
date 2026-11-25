@@ -158,7 +158,7 @@ Claude: [Monitors execution status]
 ```
 You: "My build failed, what happened?"
 Claude: Let me check the recent executions.
-        [Executes: buddy executions:list --failed]
+        [Executes: buddy executions:list --status=FAILED]
 
         Found failed execution #5678 from 10 minutes ago.
         [Executes: buddy executions:show 5678 --logs]

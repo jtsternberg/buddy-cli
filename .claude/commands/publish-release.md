@@ -24,6 +24,10 @@ Create a new release. Version can be provided as $1, or auto-detected from commi
    - `composer lint` — code must be formatted
    - README, public skill (`claude-plugin/skills/using-buddy-cli/*`), and `docs/`
      are in sync with any CLI-surface changes since the last tag
+   - **Full drift sweep (required, every release)**: preflight check 6 sweeps all of
+     `claude-plugin/**` (skills, agents, slash commands, plugin README) against the
+     current CLI, not just this release's delta. A release with any drift-sweep
+     finding is NOT READY, even if the drift predates this release.
    - Do NOT proceed past this step if preflight reports **NOT READY**. Resolve the
      blocking items (or get explicit confirmation to ship anyway) first.
 

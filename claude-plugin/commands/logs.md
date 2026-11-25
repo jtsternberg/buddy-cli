@@ -32,10 +32,9 @@ Fetch and display pipeline execution logs.
    buddy executions:failed <exec-id> --pipeline=<id>
    ```
 
-4. **Analyze errors**: Use extract_errors.php for summary
+4. **Analyze errors**: Summarize error patterns across failed actions
    ```bash
-   buddy executions:show <exec-id> --pipeline=<id> --logs --json | \
-     php ${CLAUDE_PLUGIN_ROOT}/scripts/extract_errors.php
+   buddy executions:failed <exec-id> --pipeline=<id> --analyze
    ```
 
 ## Output Format

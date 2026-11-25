@@ -19,10 +19,9 @@ Show current and recent pipeline execution status.
    buddy executions:list --pipeline=<id> --json
    ```
 
-2. **Parse and display**: Use format_status.php for readable output
+2. **Show details**: Compact status view of an execution
    ```bash
-   buddy executions:show <exec-id> --pipeline=<id> --json | \
-     php ${CLAUDE_PLUGIN_ROOT}/scripts/format_status.php
+   buddy executions:show <exec-id> --pipeline=<id> --summary
    ```
 
 3. **Highlight important info**:

@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `login --paste` for headless/SSH logins: approve in a browser on any machine, then paste the redirected `127.0.0.1` URL back into the CLI.
 - The requested scopes are saved as `granted_scopes` and shown by `config:show`. A 403 from Buddy now names the scope the call needs and how to log in with it.
 
+### Fixed
+
+- The bundled using-buddy-cli skill now covers commands and options it had been missing since earlier releases: `webhooks:*`, `pipelines:settings`, `self:install`, `pipelines:run --follow/--tag/--revision/--comment`, `executions:list --status/--limit`, `pipelines:get --output`, `vars:set --settable/--description`, and `login`'s options. A test now fails when a command or option is missing from the skill, or when the plugin docs name a command that doesn't exist.
+- Plugin docs no longer point to commands, flags and scripts that don't exist: `auth:login`/`auth:logout` headings, `executions:list --failed`, and `scripts/*.php|sh` helpers.
+- Skill recipes: "monitor a deployment" uses `--follow` (the old `watch … | head -1` printed `[`). The retry-with-backoff loop is removed, since it exited once the first retry started. troubleshooting-pipelines cancels a stuck queued run with `--execution`, finds the latest failure with `--status=FAILED`, and covers scope errors.
+- `pipelines:run --help` lists `--follow`.
+
 ## [1.10.1] - 2026-11-24
 
 ### Added
