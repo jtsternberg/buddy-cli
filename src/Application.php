@@ -32,6 +32,7 @@ use BuddyCli\Commands\Pipelines\ShowCommand as PipelinesShowCommand;
 use BuddyCli\Commands\Pipelines\UpdateCommand;
 use BuddyCli\Commands\Projects\ListCommand as ProjectsListCommand;
 use BuddyCli\Commands\Projects\ShowCommand as ProjectsShowCommand;
+use BuddyCli\Commands\ResolveCommand;
 use BuddyCli\Commands\Self\InstallCommand as SelfInstallCommand;
 use BuddyCli\Commands\Variables\DeleteCommand as VariablesDeleteCommand;
 use BuddyCli\Commands\Variables\ListCommand as VariablesListCommand;
@@ -87,6 +88,8 @@ class Application extends ConsoleApplication
         // Auth commands
         $this->addCommand(new LoginCommand($this));
         $this->addCommand(new LogoutCommand($this));
+
+        $this->addCommand(new ResolveCommand($this));
 
         // Config commands
         $this->addCommand(new ConfigShowCommand($this));
